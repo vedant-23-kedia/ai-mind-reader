@@ -1,0 +1,24 @@
+object,feature,from,to,reason
+Penguin,can_swim,0,1,Penguins swim; row already had lives_in_water=1 which contradicted can_swim=0
+Plates,produces_fire,1,0,Plates do not produce fire
+Matchbox,produces_fire,0,1,A matchbox produces fire; the flag had been set on Plates instead
+Gas,produces_fire,0,1,Cooking gas produces a flame
+Sun,produces_fire,0,1,The Sun is a burning body; also separates it from Stars
+Sun,is_round,0,1,The Sun is round
+Sun,is_vehicle,1,0,The Sun is not a vehicle
+Condom,is_vehicle,1,0,Not a vehicle
+Aeroplane,is_vehicle,0,1,An aeroplane is a transport vehicle
+Aeroplane,has_sharp_edge,1,0,Not a sharp-edged object
+fan,is_for_reading,1,0,A fan is not used for reading
+fan,has_blades,0,1,A fan has rotating blades
+fan,is_held_in_hand,1,0,A ceiling or table fan is not held while in use
+Ac,has_blades,1,0,An AC unit has internal blower not user-visible rotating blades
+Newspaper,is_for_reading,0,1,A newspaper is read
+Apple,made_by_humans,1,0,Apples are natural; row already had is_natural=1 which contradicted it
+Rose,made_by_humans,1,0,Roses are natural; row already had is_natural=1 which contradicted it
+Screwdriver,is_held_in_hand,0,1,A screwdriver is held while used
+Screwdriver,is_reusable,0,1,A screwdriver is reusable
+Tissue_Paper,is_held_in_hand,0,1,Tissue paper is held while used
+sinchan,is_superpower,1,0,Shinchan has no supernatural powers
+Belt,is_wearable,0,1,A belt is worn; inconsistent with Shoes and Cap which had is_wearable=1
+Earbuds,is_wearable,0,1,Earbuds are worn; inconsistent with other worn items

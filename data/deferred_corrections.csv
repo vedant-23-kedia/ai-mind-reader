@@ -1,0 +1,6 @@
+object,feature,from,to,reason_deferred
+Laptop,can_make_sound,0,1,"Factually wrong but phone and Laptop differ ONLY in this bit; fixing it now makes them identical. Needs a new feature (e.g. fits_in_pocket / has_keyboard) in Phase 2."
+Captian_America,can_fly,1,0,"Captain America cannot fly, but he and Hulk differ only via can_fly; fixing it now makes them identical. Needs character features (has_shield / has_cape) in Phase 2."
+Spider_Man,can_fly,1,0,"Spider-Man swings rather than flies; deferred with the rest of the character cluster to avoid collapsing it."
+Batman,can_fly,1,0,"Batman glides rather than flies; deferred with the character cluster."
+Clouds,is_round,1,0,"Clouds are not round, but Clouds and Stars differ only in this bit; needs sky features (produces_rain / is_in_sky) in Phase 2."

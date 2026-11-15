@@ -1,0 +1,4 @@
+Model,Test Accuracy (%),CV Mean Accuracy (%)
+Decision Tree,85.71,85.76
+Naive Bayes,92.86,78.17
+MLP Neural Network,92.86,80.21
