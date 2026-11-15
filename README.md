@@ -29,7 +29,7 @@ streamlit run app/app_final.py
 Verify an install:
 
 ```bash
-python -m pytest -q                 # 85 tests
+python -m pytest -q                 # 92 tests
 python scripts/smoke_check.py       # alignment, full-game replay, noise sweep
 python scripts/compare_engines.py   # old vs new engine, head to head
 python scripts/evaluate.py          # accuracy, calibration, sensitivity (~3 min)
@@ -300,7 +300,7 @@ scripts/compare_engines.py      old vs new engine, head to head
 scripts/evaluate.py             accuracy, calibration, sensitivity
 scripts/smoke_check.py          end-to-end verification
 notebooks/01_evaluation.ipynb   walkthrough of the generated results
-tests/                          85 tests
+tests/                          92 tests
 models/object_*.pkl             trained object-level models
 legacy/                         superseded category models and plots
 ```
@@ -344,7 +344,7 @@ tell apart.
 | Confidence is a probability | ✗ | ✗ | ✗ | ✗ | **✓** | **✓** |
 | Whole-game top-1 @ 10% noise | 31.0% | — | — | — | **85.8%** | **85.8%** |
 | Confidence calibrated | ✗ | ✗ | ✗ | ✗ | unverified | **✓ 0.010** |
-| Tests | 0 | 17 | 20 | 39 | 67 | **85** |
+| Tests | 0 | 17 | 20 | 39 | 67 | **92** |
 
 ### Phase 1 — bug fixes
 

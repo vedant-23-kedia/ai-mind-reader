@@ -165,11 +165,17 @@ def build_engine() -> BeliefEngine:
     return eng
 
 
-def log_feedback(guess: str, actual: str, answers) -> None:
+def log_feedback(guess: str, actual: str, answers) -> bool:
     """Record a wrong guess so it can be learned from later.
 
     The original app asked what the player was thinking of and then threw the
     answer away, while telling them it would learn from it.
+
+    The row keeps the player's full answer sheet alongside what they were
+    actually thinking of, which is what scripts/learn_from_feedback.py needs
+    to estimate how reliably each attribute gets answered.
+
+    Returns True if the row was written.
     """
     try:
         new = not cfg.FEEDBACK_LOG.exists()

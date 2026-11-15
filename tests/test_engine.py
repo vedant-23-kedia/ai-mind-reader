@@ -268,3 +268,50 @@ def test_contradictions_explain_a_low_ranking(protos):
     # Laptop is not an animal, so that answer should be listed against it.
     assert "is_animal" in eng.contradictions("Laptop")
     assert eng.contradictions("Dog") == []
+
+
+# ---- likelihood weight (the calibration knob) ---------------------------
+
+def test_weight_of_one_is_plain_bayes(protos):
+    """The default must be mathematically untouched by the knob."""
+    a = BeliefEngine(protos, likelihood_weight=1.0)
+    b = BeliefEngine(protos)
+    for f, v in [("is_animal", YES), ("is_big", NO), ("can_fly", YES)]:
+        a.answer(f, v)
+        b.answer(f, v)
+    assert np.allclose(a.posterior(), b.posterior())
+
+
+def test_weight_rejects_out_of_range_values(protos):
+    for bad in (0.0, -0.5, 1.5):
+        with pytest.raises(ValueError, match="likelihood_weight"):
+            BeliefEngine(protos, likelihood_weight=bad)
+
+
+@pytest.mark.parametrize("w", [1.0, 0.8, 0.5, 0.3])
+def test_information_gain_stays_valid_at_any_weight(protos, w):
+    """Gain must stay non-negative and under the channel ceiling.
+
+    A lower weight raises both answer likelihoods to a power, which breaks
+    their sum to 1; if that is not renormalised the 'expected' entropy is not
+    an expectation and the gain can exceed what a single answer can carry.
+    """
+    eng = BeliefEngine(protos, likelihood_weight=w)
+    eng.answer("is_animal", YES)
+    gains = eng.information_gain()
+    capacity = 1.0 - _binary_entropy(eng.noise)
+    assert min(gains.values()) > -1e-9, "negative gain at weight %s" % w
+    assert max(gains.values()) <= capacity + 1e-6, (
+        "gain %.4f exceeds the %.4f-bit ceiling at weight %s"
+        % (max(gains.values()), capacity, w))
+
+
+def test_lower_weight_makes_the_posterior_less_peaked(protos):
+    """That is the knob's whole purpose: discount each answer."""
+    sharp = BeliefEngine(protos, likelihood_weight=1.0)
+    soft = BeliefEngine(protos, likelihood_weight=0.5)
+    for eng in (sharp, soft):
+        for f, v in [("is_animal", YES), ("is_mammal", YES), ("is_big", YES)]:
+            eng.answer(f, v)
+    assert soft.posterior().max() < sharp.posterior().max()
+    assert soft.entropy() > sharp.entropy()

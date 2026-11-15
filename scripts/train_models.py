@@ -98,7 +98,6 @@ def main() -> int:
     # over the predicted labels), and early stopping is worth keeping. The
     # index -> name mapping is written to object_model_info.json so nothing
     # downstream has to infer it from row order.
-    names_arr = np.array(protos.names)
     y_train = train.y
     y_test = test.y
 

@@ -9,7 +9,9 @@ streamlit==1.40.2
 
 # Plots
 matplotlib==3.9.3
-seaborn==0.13.2
 
 # Dev
 pytest==8.3.4
+
+# Optional, only to run notebooks/01_evaluation.ipynb:
+#   pip install jupyter nbclient nbformat ipykernel

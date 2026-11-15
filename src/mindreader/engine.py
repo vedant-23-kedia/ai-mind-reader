@@ -178,14 +178,26 @@ class BeliefEngine:
         # Probability the player answers YES to each attribute, and the
         # posterior that would result - computed for all attributes at once.
         w = self.likelihood_weight
+
+        # How likely each answer is must come from the TRUE likelihood, since
+        # that is what actually generates the player's answer. These sum to 1
+        # because like1 + like0 = 1.
+        p_yes = (p[:, None] * self._like1).sum(axis=0)
+        p_no = (p[:, None] * self._like0).sum(axis=0)
+
+        # The belief that would RESULT uses the weighted likelihood, because
+        # that is how this engine updates. Mixing the two the other way round
+        # - drawing the answer's probability from the weighted likelihood -
+        # breaks the guarantee that information never hurts on average, and
+        # produced negative expected gain at weights below 1.
         num1 = p[:, None] * self._like1 ** w     # (n_objects, n_features)
         num0 = p[:, None] * self._like0 ** w
-        p_yes = num1.sum(axis=0)
-        p_no = num0.sum(axis=0)
+        den1 = num1.sum(axis=0)
+        den0 = num0.sum(axis=0)
 
         with np.errstate(divide="ignore", invalid="ignore"):
-            post1 = np.where(p_yes > 0, num1 / p_yes, 0.0)
-            post0 = np.where(p_no > 0, num0 / p_no, 0.0)
+            post1 = np.where(den1 > 0, num1 / den1, 0.0)
+            post0 = np.where(den0 > 0, num0 / den0, 0.0)
             h1 = -np.nansum(np.where(post1 > 0, post1 * np.log2(post1), 0.0), axis=0)
             h0 = -np.nansum(np.where(post0 > 0, post0 * np.log2(post0), 0.0), axis=0)
 
