@@ -126,10 +126,6 @@ def test_corrections_are_traceable(dataset):
             assert row["reason"].strip(), "correction without a reason"
 
 
-@pytest.mark.xfail(
-    reason="Phase 2 raises the dataset to min Hamming distance >= 3",
-    strict=False,
-)
 def test_min_hamming_distance_target(dataset):
     """Any single wrong answer should still be recoverable."""
     names, _, vectors = dataset
@@ -140,3 +136,49 @@ def test_min_hamming_distance_target(dataset):
     assert worst[0] >= cfg.MIN_HAMMING_TARGET, (
         "%s vs %s differ by only %d answer(s)" % (worst[1], worst[2], worst[0])
     )
+
+
+def test_implication_rules_hold(dataset):
+    """Semantic rules like is_mammal -> is_animal must not be violated.
+
+    These catch authoring mistakes automatically: labelling a bus with
+    has_screen but not is_electronic, for example.
+    """
+    names, features, vectors = dataset
+    rules = json.loads(
+        (cfg.DATA_DIR / "source" / "implications.json").read_text(encoding="utf-8"))
+    assert rules, "no implication rules defined"
+    idx = {f: i for i, f in enumerate(features)}
+    violations = []
+    for a, b in rules:
+        assert a in idx, "rule references unknown feature %r" % a
+        assert b in idx, "rule references unknown feature %r" % b
+        for name, vec in zip(names, vectors):
+            if vec[idx[a]] == 1 and vec[idx[b]] == 0:
+                violations.append("%s: %s but not %s" % (name, a, b))
+    assert not violations, violations
+
+
+def test_source_spec_matches_compiled_dataset(dataset):
+    """The CSV must be exactly what the authoring spec compiles to."""
+    names, features, vectors = dataset
+    src = cfg.DATA_DIR / "source"
+    spec_features = json.loads((src / "features.json").read_text(encoding="utf-8"))
+    spec_objects = json.loads((src / "objects.json").read_text(encoding="utf-8"))
+    assert list(spec_features) == features
+    assert list(spec_objects) == names
+    for name, vec in zip(names, vectors):
+        attrs = set(spec_objects[name]["attributes"])
+        expected = [1 if f in attrs else 0 for f in features]
+        assert vec == expected, "%s does not match its spec" % name
+
+
+def test_no_pairs_within_two_answers(dataset):
+    """Stronger than the minimum-distance gate: nothing may be at 1 or 2."""
+    names, _, vectors = dataset
+    close = []
+    for i, j in itertools.combinations(range(len(names)), 2):
+        d = sum(a != b for a, b in zip(vectors[i], vectors[j]))
+        if d < 3:
+            close.append("%s vs %s (%d)" % (names[i], names[j], d))
+    assert not close, close

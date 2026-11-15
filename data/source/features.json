@@ -1,0 +1,566 @@
+{
+  "is_living": {
+    "question": "Is it a living thing?",
+    "group": "nature"
+  },
+  "is_animal": {
+    "question": "Is it an animal?",
+    "group": "nature"
+  },
+  "is_character": {
+    "question": "Is it a fictional character?",
+    "group": "fiction"
+  },
+  "is_cartoons": {
+    "question": "Is it from a cartoon show?",
+    "group": "fiction"
+  },
+  "can_fly": {
+    "question": "Can it fly?",
+    "group": "nature"
+  },
+  "can_swim": {
+    "question": "Can it swim?",
+    "group": "nature"
+  },
+  "has_4_legs": {
+    "question": "Does it have four legs?",
+    "group": "nature"
+  },
+  "is_food": {
+    "question": "Is it something we eat?",
+    "group": "food"
+  },
+  "is_liquid": {
+    "question": "Is it in liquid form?",
+    "group": "food"
+  },
+  "is_big": {
+    "question": "Is it bigger than a chair?",
+    "group": "nature"
+  },
+  "made_by_humans": {
+    "question": "Is it made by humans?",
+    "group": "made"
+  },
+  "is_electronic": {
+    "question": "Does it need electricity to work?",
+    "group": "made"
+  },
+  "is_wearable": {
+    "question": "Is it something we wear?",
+    "group": "wear"
+  },
+  "is_round": {
+    "question": "Is it round in shape?",
+    "group": "shape"
+  },
+  "used_daily": {
+    "question": "Do we use it every day?",
+    "group": "made"
+  },
+  "is_marvel": {
+    "question": "Is it a Marvel character?",
+    "group": "fiction"
+  },
+  "is_purchased": {
+    "question": "Do we buy it from a shop?",
+    "group": "made"
+  },
+  "is_necessary": {
+    "question": "Is it necessary in daily life?",
+    "group": "made"
+  },
+  "is_paper_like": {
+    "question": "Is it made of paper?",
+    "group": "shape"
+  },
+  "is_beauty": {
+    "question": "Is it used for beauty or grooming?",
+    "group": "wear"
+  },
+  "can_make_sound": {
+    "question": "Can it produce sound?",
+    "group": "use"
+  },
+  "is_adult_only": {
+    "question": "Is it only meant for adults?",
+    "group": "use"
+  },
+  "is_vehicle": {
+    "question": "Is it a vehicle used for transport?",
+    "group": "made"
+  },
+  "is_natural": {
+    "question": "Is it found naturally in nature?",
+    "group": "nature"
+  },
+  "is_superpower": {
+    "question": "Does it have supernatural powers?",
+    "group": "fiction"
+  },
+  "is_worn_on_body": {
+    "question": "Is it worn on the body?",
+    "group": "wear"
+  },
+  "lives_in_water": {
+    "question": "Does it live in water?",
+    "group": "nature"
+  },
+  "is_fictional": {
+    "question": "Is it a fictional story character?",
+    "group": "fiction"
+  },
+  "is_edible": {
+    "question": "Can we eat or drink it?",
+    "group": "food"
+  },
+  "has_sharp_edge": {
+    "question": "Does it have a sharp edge or point?",
+    "group": "shape"
+  },
+  "has_seat": {
+    "question": "Does it have a seat to sit on?",
+    "group": "parts"
+  },
+  "has_screen": {
+    "question": "Does it have a display screen?",
+    "group": "parts"
+  },
+  "has_blades": {
+    "question": "Does it have rotating blades?",
+    "group": "parts"
+  },
+  "has_cable": {
+    "question": "Does it have a wire or cable?",
+    "group": "parts"
+  },
+  "holds_food": {
+    "question": "Is it used to hold or serve food?",
+    "group": "food"
+  },
+  "used_for_cooking": {
+    "question": "Is it used for cooking food?",
+    "group": "food"
+  },
+  "is_for_reading": {
+    "question": "Is it used for reading?",
+    "group": "use"
+  },
+  "is_reusable": {
+    "question": "Can we use it more than once?",
+    "group": "made"
+  },
+  "produces_fire": {
+    "question": "Can it produce fire or flame?",
+    "group": "parts"
+  },
+  "holds_money": {
+    "question": "Is it used to keep money?",
+    "group": "parts"
+  },
+  "worn_on_feet": {
+    "question": "Is it worn on the feet?",
+    "group": "wear"
+  },
+  "is_carried": {
+    "question": "Do we carry it in our hands?",
+    "group": "use"
+  },
+  "worn_on_ears": {
+    "question": "Is it worn on or in the ears?",
+    "group": "wear"
+  },
+  "worn_on_waist": {
+    "question": "Is it worn around the waist?",
+    "group": "wear"
+  },
+  "is_hat": {
+    "question": "Is it a type of hat or cap?",
+    "group": "wear"
+  },
+  "is_elastic": {
+    "question": "Is it made of elastic material?",
+    "group": "shape"
+  },
+  "is_indian": {
+    "question": "Is it an Indian cartoon character?",
+    "group": "fiction"
+  },
+  "is_domestic_pet": {
+    "question": "Is it kept as a domestic pet?",
+    "group": "nature"
+  },
+  "is_wild": {
+    "question": "Is it a wild animal?",
+    "group": "nature"
+  },
+  "is_mammal": {
+    "question": "Is it a mammal?",
+    "group": "nature"
+  },
+  "shows_time": {
+    "question": "Does it show or display time?",
+    "group": "parts"
+  },
+  "is_held_in_hand": {
+    "question": "Is it held in the hand while using?",
+    "group": "use"
+  },
+  "is_superhero": {
+    "question": "Is it a superhero?",
+    "group": "fiction"
+  },
+  "is_human": {
+    "question": "Is it a human being?",
+    "group": "fiction"
+  },
+  "is_robot": {
+    "question": "Is it a robot?",
+    "group": "fiction"
+  },
+  "is_child": {
+    "question": "Is it a child?",
+    "group": "fiction"
+  },
+  "is_teenager": {
+    "question": "Is it a teenager?",
+    "group": "fiction"
+  },
+  "has_cape": {
+    "question": "Does it wear a cape?",
+    "group": "fiction"
+  },
+  "wears_mask": {
+    "question": "Does it wear a mask?",
+    "group": "fiction"
+  },
+  "has_weapon": {
+    "question": "Does it carry a weapon?",
+    "group": "fiction"
+  },
+  "is_green": {
+    "question": "Is it green?",
+    "group": "fiction"
+  },
+  "is_japanese": {
+    "question": "Is it a Japanese character?",
+    "group": "fiction"
+  },
+  "is_bird": {
+    "question": "Is it a bird?",
+    "group": "nature"
+  },
+  "is_reptile": {
+    "question": "Is it a reptile?",
+    "group": "nature"
+  },
+  "has_feathers": {
+    "question": "Does it have feathers?",
+    "group": "nature"
+  },
+  "has_fins": {
+    "question": "Does it have fins?",
+    "group": "nature"
+  },
+  "lays_eggs": {
+    "question": "Does it lay eggs?",
+    "group": "nature"
+  },
+  "is_in_sky": {
+    "question": "Is it found in the sky?",
+    "group": "nature"
+  },
+  "gives_light": {
+    "question": "Does it give off light?",
+    "group": "nature"
+  },
+  "visible_at_night": {
+    "question": "Is it visible at night?",
+    "group": "nature"
+  },
+  "produces_rain": {
+    "question": "Does it produce rain?",
+    "group": "nature"
+  },
+  "is_plant": {
+    "question": "Is it a plant?",
+    "group": "nature"
+  },
+  "has_wheels": {
+    "question": "Does it have wheels?",
+    "group": "parts"
+  },
+  "has_engine": {
+    "question": "Does it have an engine?",
+    "group": "parts"
+  },
+  "is_furniture": {
+    "question": "Is it a piece of furniture?",
+    "group": "made"
+  },
+  "has_flat_surface": {
+    "question": "Does it have a flat surface on top?",
+    "group": "shape"
+  },
+  "holds_objects": {
+    "question": "Is it used to hold or carry other things?",
+    "group": "use"
+  },
+  "is_container": {
+    "question": "Is it a container?",
+    "group": "use"
+  },
+  "fits_in_pocket": {
+    "question": "Can it fit in your pocket?",
+    "group": "shape"
+  },
+  "is_disposable": {
+    "question": "Is it thrown away after use?",
+    "group": "use"
+  },
+  "has_pages": {
+    "question": "Does it have pages?",
+    "group": "parts"
+  },
+  "published_daily": {
+    "question": "Is a new one published every day?",
+    "group": "use"
+  },
+  "is_applied_to_skin": {
+    "question": "Is it applied onto the skin?",
+    "group": "wear"
+  },
+  "is_made_of_cloth": {
+    "question": "Is it made of cloth?",
+    "group": "shape"
+  },
+  "worn_in_pairs": {
+    "question": "Is it worn as a pair?",
+    "group": "wear"
+  },
+  "worn_on_head": {
+    "question": "Is it worn on the head?",
+    "group": "wear"
+  },
+  "has_keyboard": {
+    "question": "Does it have a keyboard?",
+    "group": "parts"
+  },
+  "can_make_calls": {
+    "question": "Can you make phone calls with it?",
+    "group": "use"
+  },
+  "is_wall_mounted": {
+    "question": "Is it mounted on a wall?",
+    "group": "made"
+  },
+  "is_soldier": {
+    "question": "Is it a soldier?",
+    "group": "fiction"
+  },
+  "can_climb_walls": {
+    "question": "Can it climb walls?",
+    "group": "fiction"
+  },
+  "has_tail": {
+    "question": "Does it have a tail?",
+    "group": "nature"
+  },
+  "has_hands": {
+    "question": "Does it have hands?",
+    "group": "nature"
+  },
+  "has_scales": {
+    "question": "Does it have scales?",
+    "group": "nature"
+  },
+  "has_horns": {
+    "question": "Does it have horns?",
+    "group": "nature"
+  },
+  "gives_milk": {
+    "question": "Does it give milk?",
+    "group": "nature"
+  },
+  "is_farm_animal": {
+    "question": "Is it a farm animal?",
+    "group": "nature"
+  },
+  "can_talk": {
+    "question": "Can it imitate human speech?",
+    "group": "nature"
+  },
+  "is_insect": {
+    "question": "Is it an insect?",
+    "group": "nature"
+  },
+  "is_sweet": {
+    "question": "Does it taste sweet?",
+    "group": "food"
+  },
+  "is_grain": {
+    "question": "Is it a grain or made from grain?",
+    "group": "food"
+  },
+  "is_hot_drink": {
+    "question": "Is it usually drunk hot?",
+    "group": "food"
+  },
+  "is_frozen": {
+    "question": "Is it served frozen?",
+    "group": "food"
+  },
+  "is_two_wheeler": {
+    "question": "Does it have exactly two wheels?",
+    "group": "parts"
+  },
+  "is_public_transport": {
+    "question": "Is it public transport?",
+    "group": "made"
+  },
+  "floats_on_water": {
+    "question": "Does it float on water?",
+    "group": "nature"
+  },
+  "runs_on_rails": {
+    "question": "Does it run on rails?",
+    "group": "parts"
+  },
+  "cleans_things": {
+    "question": "Is it used for cleaning?",
+    "group": "use"
+  },
+  "heats_food": {
+    "question": "Is it used to heat food?",
+    "group": "use"
+  },
+  "keeps_things_cold": {
+    "question": "Does it keep things cold?",
+    "group": "use"
+  },
+  "is_cutlery": {
+    "question": "Is it cutlery?",
+    "group": "use"
+  },
+  "used_for_writing": {
+    "question": "Is it used for writing?",
+    "group": "use"
+  },
+  "is_footwear": {
+    "question": "Is it footwear?",
+    "group": "wear"
+  },
+  "is_jewellery": {
+    "question": "Is it jewellery?",
+    "group": "wear"
+  },
+  "protects_head": {
+    "question": "Does it protect the head?",
+    "group": "wear"
+  },
+  "has_mirror": {
+    "question": "Does it have a reflective surface?",
+    "group": "parts"
+  },
+  "is_medicine": {
+    "question": "Is it medicine?",
+    "group": "use"
+  },
+  "is_carnivore": {
+    "question": "Does it eat meat?",
+    "group": "nature"
+  },
+  "used_for_riding": {
+    "question": "Can you ride on it?",
+    "group": "use"
+  },
+  "has_pockets": {
+    "question": "Does it have pockets?",
+    "group": "parts"
+  },
+  "covers_legs": {
+    "question": "Is it worn over the legs?",
+    "group": "wear"
+  },
+  "has_sleeves": {
+    "question": "Does it have sleeves?",
+    "group": "wear"
+  },
+  "has_bristles": {
+    "question": "Does it have bristles?",
+    "group": "parts"
+  },
+  "used_on_hair": {
+    "question": "Is it used on hair?",
+    "group": "wear"
+  },
+  "dissolves_in_water": {
+    "question": "Does it dissolve in water?",
+    "group": "shape"
+  },
+  "used_on_floor": {
+    "question": "Is it used on the floor?",
+    "group": "use"
+  },
+  "cuts_things": {
+    "question": "Is it used to cut things?",
+    "group": "use"
+  },
+  "used_for_repair": {
+    "question": "Is it used to repair or build things?",
+    "group": "use"
+  },
+  "has_laces": {
+    "question": "Does it have laces?",
+    "group": "parts"
+  },
+  "is_open_toed": {
+    "question": "Does it leave the toes open?",
+    "group": "wear"
+  },
+  "is_king": {
+    "question": "Is it a king or prince?",
+    "group": "fiction"
+  },
+  "shoots_web": {
+    "question": "Does it shoot webs?",
+    "group": "fiction"
+  },
+  "is_duo": {
+    "question": "Is it a pair of characters rather than one?",
+    "group": "fiction"
+  },
+  "has_beard": {
+    "question": "Does it have a beard?",
+    "group": "nature"
+  },
+  "opens_locks": {
+    "question": "Is it used to open locks?",
+    "group": "use"
+  },
+  "orbits_earth": {
+    "question": "Does it orbit the Earth?",
+    "group": "nature"
+  },
+  "used_for_sleeping": {
+    "question": "Is it used for sleeping?",
+    "group": "use"
+  },
+  "runs_on_road": {
+    "question": "Does it travel on roads?",
+    "group": "made"
+  },
+  "is_privately_owned": {
+    "question": "Is it usually owned by one person or family?",
+    "group": "made"
+  },
+  "carries_many_people": {
+    "question": "Can it carry dozens of people at once?",
+    "group": "use"
+  },
+  "has_cover": {
+    "question": "Does it have a cover or binding?",
+    "group": "parts"
+  }
+}

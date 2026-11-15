@@ -137,31 +137,36 @@ def load_all():
     category_map = pd.read_csv(cfg.CATEGORY_MAP)
     cat_map_dict = dict(zip(category_map["object"], category_map["category"]))
 
-    # The dataset must already carry every feature the models were trained on.
-    # The original code silently created missing columns filled with zeros,
-    # which is how the misspelled headers turned two questions into answers
-    # that eliminated every object. Failing loudly is the fix.
-    expected_features = list(dt_model.feature_names_in_)
-    missing = [f for f in expected_features if f not in df.columns]
+    # The game asks about every attribute in the DATASET, not just the ones
+    # the models happen to have been trained on. Binding the question set to
+    # dt_model.feature_names_in_ silently discarded every attribute added
+    # after the models were last trained, so new data had no effect on play.
+    # The models are consulted only as a fallback and get their own, narrower
+    # feature list.
+    dataset_features = [c for c in df.columns if c != "object"]
+
+    model_features = list(dt_model.feature_names_in_)
+    missing = [f for f in model_features if f not in dataset_features]
     if missing:
         raise RuntimeError(
             "dataset is missing features the models were trained on: %s\n"
             "Re-run: python scripts/build_dataset.py" % missing
         )
-    df = df[["object"] + expected_features]
 
     question_order = json.loads(cfg.QUESTION_ORDER.read_text(encoding="utf-8"))
     question_map   = json.loads(cfg.QUESTION_MAP.read_text(encoding="utf-8"))
 
-    unmapped = [f for f in expected_features if f not in question_map]
+    unmapped = [f for f in dataset_features if f not in question_map]
     if unmapped:
         raise RuntimeError("features with no question text: %s" % unmapped)
 
     return (df, dt_model, nb_model, mlp_model, best_model,
-            cat_map_dict, question_order, question_map, expected_features)
+            cat_map_dict, question_order, question_map,
+            dataset_features, model_features)
 
 (df, dt_model, nb_model, mlp_model, best_model,
- cat_map_dict, question_order, question_map, feature_columns) = load_all()
+ cat_map_dict, question_order, question_map,
+ feature_columns, model_features) = load_all()
 
 # Built once. The original code called df[df["object"] == obj] inside nested
 # loops, rescanning every row for every candidate on every question.
@@ -305,9 +310,11 @@ def make_final_guess(answers_so_far, remaining_candidates):
     if scores and scores[0][1] > 0:
         return scores[0][0], min(scores[0][1], 99.0)
 
-    # Fallback to ensemble
-    input_data = {feat: answers_so_far.get(feat, 0.5) for feat in feature_columns}
-    input_df   = pd.DataFrame([input_data])[feature_columns]
+    # Fallback to ensemble. The models predict a CATEGORY, not an object, and
+    # were trained on a narrower feature set than the game now asks about, so
+    # they are fed only the features they actually know.
+    input_data = {feat: answers_so_far.get(feat, 0.5) for feat in model_features}
+    input_df   = pd.DataFrame([input_data])[model_features]
 
     dt_probs  = dt_model.predict_proba(input_df)[0]
     nb_probs  = nb_model.predict_proba(input_df)[0]

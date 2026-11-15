@@ -1,0 +1,1729 @@
+{
+  "Dog": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "has_4_legs",
+      "is_purchased",
+      "can_make_sound",
+      "is_natural",
+      "is_reusable",
+      "is_domestic_pet",
+      "is_mammal",
+      "has_tail"
+    ]
+  },
+  "Lion": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "has_4_legs",
+      "is_big",
+      "can_make_sound",
+      "is_natural",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_wild",
+      "is_mammal",
+      "has_tail",
+      "is_carnivore"
+    ]
+  },
+  "Dolphin": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_swim",
+      "is_big",
+      "can_make_sound",
+      "is_natural",
+      "lives_in_water",
+      "is_reusable",
+      "is_wild",
+      "is_mammal",
+      "has_fins",
+      "has_tail",
+      "is_carnivore"
+    ]
+  },
+  "Fish": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_swim",
+      "can_make_sound",
+      "is_natural",
+      "lives_in_water",
+      "is_edible",
+      "is_domestic_pet",
+      "has_fins",
+      "lays_eggs",
+      "has_tail",
+      "has_scales"
+    ]
+  },
+  "Eagle": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_fly",
+      "can_make_sound",
+      "is_natural",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_wild",
+      "is_bird",
+      "has_feathers",
+      "lays_eggs",
+      "is_carnivore"
+    ]
+  },
+  "Snake": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_swim",
+      "can_make_sound",
+      "is_natural",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_wild",
+      "is_reptile",
+      "lays_eggs",
+      "has_tail",
+      "has_scales",
+      "is_carnivore"
+    ]
+  },
+  "Penguin": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_swim",
+      "can_make_sound",
+      "is_natural",
+      "lives_in_water",
+      "is_reusable",
+      "is_wild",
+      "is_bird",
+      "has_feathers",
+      "lays_eggs"
+    ]
+  },
+  "car": {
+    "category": "Vehicle",
+    "attributes": [
+      "is_big",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "can_make_sound",
+      "is_vehicle",
+      "has_seat",
+      "is_reusable",
+      "has_wheels",
+      "has_engine",
+      "runs_on_road",
+      "is_privately_owned"
+    ]
+  },
+  "phone": {
+    "category": "Electronic",
+    "attributes": [
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "can_make_sound",
+      "has_screen",
+      "is_reusable",
+      "is_carried",
+      "shows_time",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "can_make_calls"
+    ]
+  },
+  "Guitar": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "can_make_sound",
+      "is_reusable",
+      "is_held_in_hand"
+    ]
+  },
+  "Apple": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "is_round",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_natural",
+      "is_edible",
+      "is_held_in_hand"
+    ]
+  },
+  "Chair": {
+    "category": "Daily Object",
+    "attributes": [
+      "has_4_legs",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "has_seat",
+      "is_reusable",
+      "is_furniture"
+    ]
+  },
+  "Pizza": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "made_by_humans",
+      "is_round",
+      "is_purchased",
+      "is_edible"
+    ]
+  },
+  "Laptop": {
+    "category": "Electronic",
+    "attributes": [
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "can_make_sound",
+      "has_screen",
+      "is_reusable",
+      "is_carried",
+      "shows_time",
+      "is_held_in_hand",
+      "has_keyboard"
+    ]
+  },
+  "Tree": {
+    "category": "Natural",
+    "attributes": [
+      "is_living",
+      "is_big",
+      "used_daily",
+      "is_necessary",
+      "is_natural",
+      "is_reusable",
+      "is_plant"
+    ]
+  },
+  "Bicycle": {
+    "category": "Vehicle",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_vehicle",
+      "is_reusable",
+      "has_wheels",
+      "is_two_wheeler",
+      "runs_on_road",
+      "is_privately_owned"
+    ]
+  },
+  "Clock": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_round",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "shows_time"
+    ]
+  },
+  "Book": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_paper_like",
+      "is_for_reading",
+      "is_reusable",
+      "is_held_in_hand",
+      "has_pages",
+      "has_cover"
+    ]
+  },
+  "Charger": {
+    "category": "Electronic",
+    "attributes": [
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "has_cable",
+      "is_reusable",
+      "is_held_in_hand"
+    ]
+  },
+  "Table": {
+    "category": "Daily Object",
+    "attributes": [
+      "has_4_legs",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "is_furniture",
+      "has_flat_surface",
+      "holds_objects"
+    ]
+  },
+  "Screwdriver": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_purchased",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_held_in_hand",
+      "used_for_repair"
+    ]
+  },
+  "Newspaper": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_paper_like",
+      "is_for_reading",
+      "is_held_in_hand",
+      "is_disposable",
+      "has_pages",
+      "published_daily"
+    ]
+  },
+  "fan": {
+    "category": "Electronic",
+    "attributes": [
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "has_blades",
+      "is_reusable"
+    ]
+  },
+  "Ac": {
+    "category": "Electronic",
+    "attributes": [
+      "is_big",
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "is_wall_mounted"
+    ]
+  },
+  "Matchbox": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "produces_fire",
+      "is_container",
+      "fits_in_pocket",
+      "is_disposable"
+    ]
+  },
+  "Plates": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_round",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "holds_food",
+      "is_reusable",
+      "is_held_in_hand",
+      "holds_objects"
+    ]
+  },
+  "Gas": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_round",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "used_for_cooking",
+      "is_reusable",
+      "produces_fire",
+      "is_container",
+      "heats_food"
+    ]
+  },
+  "Clouds": {
+    "category": "Natural",
+    "attributes": [
+      "is_big",
+      "is_necessary",
+      "is_natural",
+      "is_reusable",
+      "is_in_sky",
+      "produces_rain"
+    ]
+  },
+  "Stars": {
+    "category": "Natural",
+    "attributes": [
+      "is_big",
+      "is_necessary",
+      "is_natural",
+      "is_reusable",
+      "is_in_sky",
+      "gives_light",
+      "visible_at_night"
+    ]
+  },
+  "Paint": {
+    "category": "Daily Object",
+    "attributes": [
+      "is_liquid",
+      "made_by_humans",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "is_container"
+    ]
+  },
+  "Flowerpot": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_round",
+      "is_purchased",
+      "is_reusable",
+      "holds_objects",
+      "is_container"
+    ]
+  },
+  "Tissue_Paper": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_paper_like",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "is_disposable"
+    ]
+  },
+  "Aeroplane": {
+    "category": "Vehicle",
+    "attributes": [
+      "can_fly",
+      "is_big",
+      "made_by_humans",
+      "is_purchased",
+      "can_make_sound",
+      "is_vehicle",
+      "is_reusable",
+      "carries_many_people"
+    ]
+  },
+  "Sun": {
+    "category": "Natural",
+    "attributes": [
+      "is_big",
+      "is_round",
+      "used_daily",
+      "is_necessary",
+      "is_natural",
+      "is_reusable",
+      "produces_fire",
+      "is_in_sky",
+      "gives_light"
+    ]
+  },
+  "Handbag": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_worn_on_body",
+      "is_reusable",
+      "is_carried",
+      "is_held_in_hand",
+      "holds_objects",
+      "is_container",
+      "is_made_of_cloth",
+      "has_pockets"
+    ]
+  },
+  "Lipstick": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_beauty",
+      "is_worn_on_body",
+      "is_reusable",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "is_applied_to_skin"
+    ]
+  },
+  "Comb": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_beauty",
+      "is_reusable",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "used_on_hair"
+    ]
+  },
+  "Perfume": {
+    "category": "Daily Object",
+    "attributes": [
+      "is_liquid",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_beauty",
+      "is_reusable",
+      "is_carried",
+      "is_held_in_hand",
+      "is_applied_to_skin"
+    ]
+  },
+  "Wallet": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "holds_money",
+      "is_carried",
+      "is_held_in_hand",
+      "holds_objects",
+      "is_container",
+      "fits_in_pocket"
+    ]
+  },
+  "Belt": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_worn_on_body",
+      "is_reusable",
+      "worn_on_waist"
+    ]
+  },
+  "Shoes": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_worn_on_body",
+      "is_reusable",
+      "worn_on_feet",
+      "is_made_of_cloth",
+      "worn_in_pairs",
+      "is_footwear",
+      "has_laces"
+    ]
+  },
+  "Condom": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "is_purchased",
+      "is_adult_only",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "is_disposable"
+    ]
+  },
+  "Hairband": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_beauty",
+      "is_worn_on_body",
+      "is_reusable",
+      "is_elastic",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "worn_on_head",
+      "used_on_hair"
+    ]
+  },
+  "Rose": {
+    "category": "Natural",
+    "attributes": [
+      "is_round",
+      "is_purchased",
+      "is_beauty",
+      "is_natural",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_held_in_hand",
+      "is_plant"
+    ]
+  },
+  "Earbuds": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_worn_on_body",
+      "has_cable",
+      "is_reusable",
+      "worn_on_ears",
+      "fits_in_pocket",
+      "worn_in_pairs"
+    ]
+  },
+  "Cap": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_beauty",
+      "is_worn_on_body",
+      "is_reusable",
+      "is_hat",
+      "is_held_in_hand",
+      "is_made_of_cloth",
+      "worn_on_head",
+      "protects_head"
+    ]
+  },
+  "Ring": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "is_round",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_beauty",
+      "is_worn_on_body",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "is_jewellery"
+    ]
+  },
+  "Cold_Drinks": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "is_liquid",
+      "made_by_humans",
+      "is_purchased",
+      "is_edible",
+      "is_reusable",
+      "is_carried"
+    ]
+  },
+  "Doreamon": {
+    "category": "Cartoon",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_cartoons",
+      "can_fly",
+      "can_make_sound",
+      "is_superpower",
+      "is_fictional",
+      "is_reusable",
+      "is_robot",
+      "is_japanese"
+    ]
+  },
+  "sinchan": {
+    "category": "Cartoon",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_cartoons",
+      "can_make_sound",
+      "is_fictional",
+      "is_reusable",
+      "is_human",
+      "is_child",
+      "is_japanese",
+      "has_hands"
+    ]
+  },
+  "Chota_Bheem": {
+    "category": "Cartoon",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_cartoons",
+      "can_make_sound",
+      "is_superpower",
+      "is_fictional",
+      "is_reusable",
+      "is_indian",
+      "is_human",
+      "is_child",
+      "has_hands"
+    ]
+  },
+  "Thor": {
+    "category": "Marvel",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "can_fly",
+      "is_big",
+      "is_marvel",
+      "can_make_sound",
+      "is_superpower",
+      "is_fictional",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_superhero",
+      "has_cape",
+      "has_weapon",
+      "has_hands",
+      "is_king"
+    ]
+  },
+  "Captian_America": {
+    "category": "Marvel",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_big",
+      "is_marvel",
+      "can_make_sound",
+      "is_superpower",
+      "is_fictional",
+      "is_reusable",
+      "is_superhero",
+      "is_human",
+      "wears_mask",
+      "has_weapon",
+      "is_soldier",
+      "has_hands"
+    ]
+  },
+  "Hulk": {
+    "category": "Marvel",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_big",
+      "is_marvel",
+      "can_make_sound",
+      "is_superpower",
+      "is_fictional",
+      "is_reusable",
+      "is_superhero",
+      "is_green",
+      "has_hands"
+    ]
+  },
+  "Spider_Man": {
+    "category": "Marvel",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_big",
+      "is_marvel",
+      "can_make_sound",
+      "is_superpower",
+      "is_fictional",
+      "is_reusable",
+      "is_superhero",
+      "is_human",
+      "is_teenager",
+      "wears_mask",
+      "can_climb_walls",
+      "has_hands",
+      "shoots_web"
+    ]
+  },
+  "Batman": {
+    "category": "Cartoon",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_big",
+      "can_make_sound",
+      "is_fictional",
+      "is_reusable",
+      "is_superhero",
+      "is_human",
+      "has_cape",
+      "wears_mask",
+      "has_weapon",
+      "has_hands"
+    ]
+  },
+  "Elephant": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "has_4_legs",
+      "is_big",
+      "can_make_sound",
+      "is_natural",
+      "is_reusable",
+      "is_wild",
+      "is_mammal",
+      "has_tail",
+      "used_for_riding"
+    ]
+  },
+  "Monkey": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "has_4_legs",
+      "can_make_sound",
+      "is_natural",
+      "is_reusable",
+      "is_wild",
+      "is_mammal",
+      "can_climb_walls",
+      "has_tail",
+      "has_hands"
+    ]
+  },
+  "Cow": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "has_4_legs",
+      "is_big",
+      "can_make_sound",
+      "is_natural",
+      "is_reusable",
+      "is_domestic_pet",
+      "is_mammal",
+      "has_tail",
+      "has_horns",
+      "gives_milk",
+      "is_farm_animal"
+    ]
+  },
+  "Horse": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "has_4_legs",
+      "is_big",
+      "can_make_sound",
+      "is_natural",
+      "is_reusable",
+      "is_domestic_pet",
+      "is_mammal",
+      "has_tail",
+      "is_farm_animal",
+      "used_for_riding"
+    ]
+  },
+  "Goat": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "has_4_legs",
+      "can_make_sound",
+      "is_natural",
+      "is_reusable",
+      "is_domestic_pet",
+      "is_mammal",
+      "can_climb_walls",
+      "has_tail",
+      "has_horns",
+      "gives_milk",
+      "is_farm_animal",
+      "has_beard"
+    ]
+  },
+  "Crocodile": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_swim",
+      "has_4_legs",
+      "is_big",
+      "can_make_sound",
+      "is_natural",
+      "lives_in_water",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_wild",
+      "is_reptile",
+      "lays_eggs",
+      "has_tail",
+      "has_scales",
+      "is_carnivore"
+    ]
+  },
+  "Lizard": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "has_4_legs",
+      "is_natural",
+      "is_reusable",
+      "is_wild",
+      "is_reptile",
+      "lays_eggs",
+      "can_climb_walls",
+      "has_tail",
+      "has_scales"
+    ]
+  },
+  "Frog": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_swim",
+      "can_make_sound",
+      "is_natural",
+      "lives_in_water",
+      "is_reusable",
+      "is_wild",
+      "is_green",
+      "lays_eggs"
+    ]
+  },
+  "Parrot": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_fly",
+      "can_make_sound",
+      "is_natural",
+      "is_reusable",
+      "is_domestic_pet",
+      "is_green",
+      "is_bird",
+      "has_feathers",
+      "lays_eggs",
+      "has_tail",
+      "can_talk"
+    ]
+  },
+  "Butterfly": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_fly",
+      "is_purchased",
+      "is_beauty",
+      "is_natural",
+      "is_reusable",
+      "is_wild",
+      "lays_eggs",
+      "is_insect"
+    ]
+  },
+  "Mosquito": {
+    "category": "Animal",
+    "attributes": [
+      "is_living",
+      "is_animal",
+      "can_fly",
+      "can_make_sound",
+      "is_natural",
+      "is_wild",
+      "lays_eggs",
+      "is_insect"
+    ]
+  },
+  "Banana": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "used_daily",
+      "is_purchased",
+      "is_natural",
+      "is_edible",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "is_sweet"
+    ]
+  },
+  "Rice": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_natural",
+      "is_edible",
+      "used_for_cooking",
+      "is_grain"
+    ]
+  },
+  "Bread": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_edible",
+      "is_held_in_hand",
+      "is_grain"
+    ]
+  },
+  "Milk": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "is_liquid",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_natural",
+      "is_edible"
+    ]
+  },
+  "Tea": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "is_liquid",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_edible",
+      "is_held_in_hand",
+      "is_hot_drink"
+    ]
+  },
+  "Chocolate": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "made_by_humans",
+      "is_purchased",
+      "is_edible",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "is_sweet"
+    ]
+  },
+  "Ice_Cream": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "made_by_humans",
+      "is_round",
+      "is_purchased",
+      "is_edible",
+      "is_held_in_hand",
+      "is_sweet",
+      "is_frozen"
+    ]
+  },
+  "Honey": {
+    "category": "Food",
+    "attributes": [
+      "is_food",
+      "is_liquid",
+      "made_by_humans",
+      "is_purchased",
+      "is_natural",
+      "is_edible",
+      "is_container",
+      "is_sweet"
+    ]
+  },
+  "Bus": {
+    "category": "Vehicle",
+    "attributes": [
+      "is_big",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "can_make_sound",
+      "is_vehicle",
+      "has_seat",
+      "is_reusable",
+      "has_wheels",
+      "has_engine",
+      "is_public_transport",
+      "runs_on_road",
+      "carries_many_people"
+    ]
+  },
+  "Train": {
+    "category": "Vehicle",
+    "attributes": [
+      "is_big",
+      "made_by_humans",
+      "is_purchased",
+      "is_necessary",
+      "can_make_sound",
+      "is_vehicle",
+      "has_seat",
+      "is_reusable",
+      "has_wheels",
+      "has_engine",
+      "is_public_transport",
+      "runs_on_rails",
+      "carries_many_people"
+    ]
+  },
+  "Motorcycle": {
+    "category": "Vehicle",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "can_make_sound",
+      "is_vehicle",
+      "has_seat",
+      "is_reusable",
+      "has_wheels",
+      "has_engine",
+      "is_two_wheeler",
+      "runs_on_road",
+      "is_privately_owned"
+    ]
+  },
+  "Ship": {
+    "category": "Vehicle",
+    "attributes": [
+      "is_big",
+      "made_by_humans",
+      "is_purchased",
+      "can_make_sound",
+      "is_vehicle",
+      "has_seat",
+      "is_reusable",
+      "has_engine",
+      "floats_on_water",
+      "carries_many_people"
+    ]
+  },
+  "Boat": {
+    "category": "Vehicle",
+    "attributes": [
+      "made_by_humans",
+      "is_purchased",
+      "is_vehicle",
+      "has_seat",
+      "is_reusable",
+      "floats_on_water"
+    ]
+  },
+  "Helicopter": {
+    "category": "Vehicle",
+    "attributes": [
+      "can_fly",
+      "is_big",
+      "made_by_humans",
+      "is_purchased",
+      "can_make_sound",
+      "is_vehicle",
+      "has_seat",
+      "has_blades",
+      "is_reusable",
+      "has_engine"
+    ]
+  },
+  "Television": {
+    "category": "Electronic",
+    "attributes": [
+      "is_big",
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "can_make_sound",
+      "has_screen",
+      "has_cable",
+      "is_reusable",
+      "is_wall_mounted"
+    ]
+  },
+  "Refrigerator": {
+    "category": "Electronic",
+    "attributes": [
+      "is_big",
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "has_cable",
+      "holds_food",
+      "is_reusable",
+      "is_container",
+      "keeps_things_cold"
+    ]
+  },
+  "Washing_Machine": {
+    "category": "Electronic",
+    "attributes": [
+      "is_big",
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "can_make_sound",
+      "has_cable",
+      "is_reusable",
+      "is_container",
+      "cleans_things"
+    ]
+  },
+  "Microwave": {
+    "category": "Electronic",
+    "attributes": [
+      "made_by_humans",
+      "is_electronic",
+      "used_daily",
+      "is_purchased",
+      "has_cable",
+      "used_for_cooking",
+      "is_reusable",
+      "is_container",
+      "heats_food"
+    ]
+  },
+  "Smartwatch": {
+    "category": "Electronic",
+    "attributes": [
+      "made_by_humans",
+      "is_electronic",
+      "is_wearable",
+      "is_purchased",
+      "can_make_sound",
+      "is_worn_on_body",
+      "has_screen",
+      "is_reusable",
+      "shows_time",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "can_make_calls"
+    ]
+  },
+  "Mixer_Grinder": {
+    "category": "Electronic",
+    "attributes": [
+      "made_by_humans",
+      "is_electronic",
+      "is_purchased",
+      "can_make_sound",
+      "has_blades",
+      "has_cable",
+      "used_for_cooking",
+      "is_reusable",
+      "is_container"
+    ]
+  },
+  "Socks": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_worn_on_body",
+      "is_reusable",
+      "worn_on_feet",
+      "is_elastic",
+      "is_made_of_cloth",
+      "worn_in_pairs",
+      "is_footwear"
+    ]
+  },
+  "Sandals": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_worn_on_body",
+      "is_reusable",
+      "worn_on_feet",
+      "worn_in_pairs",
+      "is_footwear",
+      "is_open_toed"
+    ]
+  },
+  "Trousers": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_worn_on_body",
+      "is_reusable",
+      "worn_on_waist",
+      "is_made_of_cloth",
+      "has_pockets",
+      "covers_legs"
+    ]
+  },
+  "Shirt": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_worn_on_body",
+      "is_reusable",
+      "is_made_of_cloth",
+      "has_pockets",
+      "has_sleeves"
+    ]
+  },
+  "Helmet": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "is_round",
+      "is_purchased",
+      "is_necessary",
+      "is_worn_on_body",
+      "is_reusable",
+      "is_held_in_hand",
+      "worn_on_head",
+      "protects_head"
+    ]
+  },
+  "Earrings": {
+    "category": "Wearable",
+    "attributes": [
+      "made_by_humans",
+      "is_wearable",
+      "is_purchased",
+      "is_beauty",
+      "is_worn_on_body",
+      "is_reusable",
+      "worn_on_ears",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "worn_in_pairs",
+      "is_jewellery"
+    ]
+  },
+  "Moon": {
+    "category": "Natural",
+    "attributes": [
+      "is_big",
+      "is_round",
+      "is_natural",
+      "is_reusable",
+      "is_in_sky",
+      "gives_light",
+      "visible_at_night",
+      "orbits_earth"
+    ]
+  },
+  "River": {
+    "category": "Natural",
+    "attributes": [
+      "can_swim",
+      "is_liquid",
+      "is_big",
+      "is_necessary",
+      "can_make_sound",
+      "is_natural",
+      "is_reusable"
+    ]
+  },
+  "Mountain": {
+    "category": "Natural",
+    "attributes": [
+      "is_big",
+      "is_natural",
+      "is_reusable"
+    ]
+  },
+  "Leaf": {
+    "category": "Natural",
+    "attributes": [
+      "is_living",
+      "is_natural",
+      "is_reusable",
+      "is_held_in_hand",
+      "is_green",
+      "is_plant",
+      "fits_in_pocket"
+    ]
+  },
+  "Grass": {
+    "category": "Natural",
+    "attributes": [
+      "is_living",
+      "used_daily",
+      "is_natural",
+      "is_reusable",
+      "is_green",
+      "is_plant"
+    ]
+  },
+  "Spoon": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "holds_food",
+      "is_reusable",
+      "is_held_in_hand",
+      "is_cutlery"
+    ]
+  },
+  "Knife": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "has_sharp_edge",
+      "used_for_cooking",
+      "is_reusable",
+      "is_held_in_hand",
+      "is_cutlery",
+      "cuts_things"
+    ]
+  },
+  "Scissors": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_purchased",
+      "has_sharp_edge",
+      "has_blades",
+      "is_reusable",
+      "is_held_in_hand",
+      "cuts_things"
+    ]
+  },
+  "Mirror": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_beauty",
+      "is_reusable",
+      "is_wall_mounted",
+      "has_mirror"
+    ]
+  },
+  "Bed": {
+    "category": "Daily Object",
+    "attributes": [
+      "has_4_legs",
+      "is_big",
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "is_furniture",
+      "has_flat_surface",
+      "used_for_sleeping"
+    ]
+  },
+  "Pen": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "is_carried",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "used_for_writing"
+    ]
+  },
+  "Pencil": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "has_sharp_edge",
+      "is_carried",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "used_for_writing"
+    ]
+  },
+  "Toothbrush": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_beauty",
+      "is_reusable",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "cleans_things",
+      "has_bristles"
+    ]
+  },
+  "Soap": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_beauty",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "cleans_things",
+      "dissolves_in_water"
+    ]
+  },
+  "Umbrella": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_purchased",
+      "is_reusable",
+      "is_carried",
+      "is_held_in_hand",
+      "is_made_of_cloth"
+    ]
+  },
+  "Broom": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "is_held_in_hand",
+      "cleans_things",
+      "has_bristles",
+      "used_on_floor"
+    ]
+  },
+  "Key": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "has_sharp_edge",
+      "is_reusable",
+      "is_carried",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "opens_locks"
+    ]
+  },
+  "Bottle": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "used_daily",
+      "is_purchased",
+      "is_necessary",
+      "is_reusable",
+      "is_carried",
+      "is_held_in_hand",
+      "is_container"
+    ]
+  },
+  "Tablet_Medicine": {
+    "category": "Daily Object",
+    "attributes": [
+      "made_by_humans",
+      "is_round",
+      "is_purchased",
+      "is_necessary",
+      "is_edible",
+      "is_held_in_hand",
+      "fits_in_pocket",
+      "is_disposable",
+      "is_medicine"
+    ]
+  },
+  "Iron_Man": {
+    "category": "Marvel",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "can_fly",
+      "is_big",
+      "is_marvel",
+      "can_make_sound",
+      "is_fictional",
+      "is_reusable",
+      "is_superhero",
+      "is_human",
+      "wears_mask",
+      "has_weapon",
+      "has_hands"
+    ]
+  },
+  "Black_Panther": {
+    "category": "Marvel",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_big",
+      "is_marvel",
+      "can_make_sound",
+      "is_superpower",
+      "is_fictional",
+      "is_reusable",
+      "is_superhero",
+      "is_human",
+      "wears_mask",
+      "can_climb_walls",
+      "has_hands",
+      "is_king"
+    ]
+  },
+  "Wall_E": {
+    "category": "Cartoon",
+    "attributes": [
+      "is_character",
+      "is_cartoons",
+      "made_by_humans",
+      "can_make_sound",
+      "is_fictional",
+      "is_reusable",
+      "is_robot",
+      "has_wheels",
+      "has_hands"
+    ]
+  },
+  "Ben_10": {
+    "category": "Cartoon",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_cartoons",
+      "can_make_sound",
+      "is_superpower",
+      "is_fictional",
+      "is_reusable",
+      "is_human",
+      "is_teenager",
+      "is_green",
+      "has_hands"
+    ]
+  },
+  "Motu_Patlu": {
+    "category": "Cartoon",
+    "attributes": [
+      "is_living",
+      "is_character",
+      "is_cartoons",
+      "can_make_sound",
+      "is_fictional",
+      "is_reusable",
+      "is_indian",
+      "is_human",
+      "has_hands",
+      "is_duo"
+    ]
+  }
+}

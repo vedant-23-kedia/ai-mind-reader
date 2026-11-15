@@ -43,11 +43,16 @@ def main() -> int:
             continue
         model = joblib.load(path)
         expected = list(getattr(model, "feature_names_in_", []))
-        check("%s feature names match dataset" % name,
-              expected == features,
-              "model expects %d, dataset has %d; symmetric difference: %s"
-              % (len(expected), len(features),
-                 sorted(set(expected) ^ set(features))))
+        # The models are retrained in Phase 3. Until then they know a subset
+        # of the dataset's attributes, which is fine because they are only a
+        # fallback - but every feature they expect must still exist.
+        unknown = sorted(set(expected) - set(features))
+        check("%s features are all present in the dataset" % name,
+              not unknown,
+              "model expects features the dataset lacks: %s" % unknown)
+        if not unknown and len(expected) < len(features):
+            print("         (stale: knows %d of %d attributes, retrained in Phase 3)"
+                  % (len(expected), len(features)))
 
     print()
     print("=" * 72)
