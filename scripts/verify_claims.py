@@ -209,7 +209,9 @@ def main() -> int:
     if m:
         import subprocess
         out = subprocess.run(
-            [str(cfg.ROOT / ".venv/Scripts/python.exe"), "-m", "pytest",
+            # sys.executable, not a hardcoded .venv path: this has to work
+            # from a fresh clone, where no .venv exists yet, and on any OS.
+            [sys.executable, "-m", "pytest",
              str(cfg.ROOT / "tests"), "-q", "--collect-only"],
             capture_output=True, text=True, cwd=str(cfg.ROOT))
         found = re.search(r"(\d+) tests? collected", out.stdout)
