@@ -5,3 +5,11 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 data/feedback_log.csv
+
+# Trained models are regenerable: `python scripts/train_models.py` rebuilds
+# all six byte-identically from the fixed seed. Only the model the app needs
+# at runtime is versioned, so a fresh clone can play without training first.
+# The others are large for a silly reason: a tree node stores a 117-class
+# distribution, so an unpruned forest runs to hundreds of megabytes.
+models/object_*.pkl
+!models/object_best_model.pkl

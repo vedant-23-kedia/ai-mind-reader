@@ -128,29 +128,43 @@ def load_all():
         if col in df.columns:
             df = df.drop(col, axis=1)
 
-    dt_model   = joblib.load(cfg.MODELS_DIR / "decision_tree.pkl")
-    nb_model   = joblib.load(cfg.MODELS_DIR / "naive_bayes.pkl")
-    mlp_model  = joblib.load(cfg.MODELS_DIR / "mlp_neural_network.pkl")
-    best_path  = cfg.MODELS_DIR / "best_model.pkl"
-    best_model = joblib.load(best_path) if best_path.exists() else dt_model
+    # Phase 3 model: predicts the OBJECT (117 classes) rather than one of 9
+    # categories. The old category models are kept in models/ for reference
+    # but are no longer consulted - knowing something is "Daily Object" does
+    # not tell you whether it is a spoon or a broom.
+    object_model_path = cfg.MODELS_DIR / "object_best_model.pkl"
+    if not object_model_path.exists():
+        raise RuntimeError(
+            "%s not found. Train it with:\n"
+            "    python scripts/train_models.py" % object_model_path
+        )
+    object_model = joblib.load(object_model_path)
+
+    # The model is trained on integer object indices; this file carries the
+    # index -> object-name mapping so nothing has to infer it from row order.
+    info_path = cfg.MODELS_DIR / "object_model_info.json"
+    if not info_path.exists():
+        raise RuntimeError(
+            "%s not found. Re-run: python scripts/train_models.py" % info_path)
+    model_info = json.loads(info_path.read_text(encoding="utf-8"))
+    object_classes = model_info["classes"]
 
     category_map = pd.read_csv(cfg.CATEGORY_MAP)
     cat_map_dict = dict(zip(category_map["object"], category_map["category"]))
 
-    # The game asks about every attribute in the DATASET, not just the ones
-    # the models happen to have been trained on. Binding the question set to
-    # dt_model.feature_names_in_ silently discarded every attribute added
-    # after the models were last trained, so new data had no effect on play.
-    # The models are consulted only as a fallback and get their own, narrower
-    # feature list.
+    # The game asks about every attribute in the DATASET. Binding the question
+    # set to the model's feature list silently discarded every attribute added
+    # after the model was last trained, so new data had no effect on play.
     dataset_features = [c for c in df.columns if c != "object"]
 
-    model_features = list(dt_model.feature_names_in_)
-    missing = [f for f in model_features if f not in dataset_features]
-    if missing:
+    # The model was fitted on a plain array, so its column order is whatever
+    # the dataset had at training time. That order is recorded in the info
+    # file and must still match, or the columns would be silently misaligned.
+    model_features = list(model_info["features"])
+    if list(model_features) != list(dataset_features):
         raise RuntimeError(
-            "dataset is missing features the models were trained on: %s\n"
-            "Re-run: python scripts/build_dataset.py" % missing
+            "the trained model's attributes no longer match the dataset.\n"
+            "Re-run: python scripts/train_models.py"
         )
 
     question_order = json.loads(cfg.QUESTION_ORDER.read_text(encoding="utf-8"))
@@ -160,13 +174,11 @@ def load_all():
     if unmapped:
         raise RuntimeError("features with no question text: %s" % unmapped)
 
-    return (df, dt_model, nb_model, mlp_model, best_model,
-            cat_map_dict, question_order, question_map,
-            dataset_features, model_features)
+    return (df, object_model, object_classes, cat_map_dict, question_order,
+            question_map, dataset_features, model_features, model_info)
 
-(df, dt_model, nb_model, mlp_model, best_model,
- cat_map_dict, question_order, question_map,
- feature_columns, model_features) = load_all()
+(df, object_model, object_classes, cat_map_dict, question_order,
+ question_map, feature_columns, model_features, model_info) = load_all()
 
 # Built once. The original code called df[df["object"] == obj] inside nested
 # loops, rescanning every row for every candidate on every question.
@@ -310,24 +322,31 @@ def make_final_guess(answers_so_far, remaining_candidates):
     if scores and scores[0][1] > 0:
         return scores[0][0], min(scores[0][1], 99.0)
 
-    # Fallback to ensemble. The models predict a CATEGORY, not an object, and
-    # were trained on a narrower feature set than the game now asks about, so
-    # they are fed only the features they actually know.
-    input_data = {feat: answers_so_far.get(feat, 0.5) for feat in model_features}
-    input_df   = pd.DataFrame([input_data])[model_features]
+    # Fall back to the trained model. It predicts the OBJECT directly, so the
+    # old behaviour - predict a category, then return whichever object
+    # happened to be listed first in it - is gone.
+    #
+    # Unanswered and "maybe" attributes are passed as 0 because the model
+    # needs a complete binary vector. That is a real approximation: it treats
+    # "I don't know" as "no". Marginalising over unknown answers properly is
+    # what the Phase 4 Bayesian engine does, and it will replace this.
+    row = [1 if answers_so_far.get(f) == 1 else 0 for f in model_features]
+    proba = object_model.predict_proba(np.array([row]))[0]
 
-    dt_probs  = dt_model.predict_proba(input_df)[0]
-    nb_probs  = nb_model.predict_proba(input_df)[0]
-    mlp_probs = mlp_model.predict_proba(input_df)[0]
-    ensemble  = (dt_probs + nb_probs + mlp_probs) / 3
+    # Restrict to objects still in play, so the model cannot name something
+    # the player's answers have already ruled out.
+    pool = set(search_pool)
+    ranked = sorted(
+        ((p, object_classes[int(c)]) for p, c in zip(proba, object_model.classes_)),
+        key=lambda t: -t[0],
+    )
+    for p, obj in ranked:
+        if obj in pool:
+            return obj, round(float(p) * 100, 2)
 
-    class_names = best_model.classes_
-    top_cat     = class_names[np.argmax(ensemble)]
-    top_conf    = round(float(np.max(ensemble)) * 100, 2)
-
-    cat_cands   = [o for o in search_pool if cat_map_dict.get(o, "") == top_cat]
-    final_obj   = cat_cands[0] if cat_cands else search_pool[0]
-    return final_obj, top_conf
+    # Nothing in the pool at all: return the model's overall best guess.
+    p, obj = ranked[0]
+    return obj, round(float(p) * 100, 2)
 
 # ============================================================
 # SESSION STATE
@@ -366,7 +385,7 @@ st.markdown('<div class="sub-title">✨ Think of anything — I will read your m
 
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("🎯 Objects", str(N_OBJECTS))
-c2.metric("🤖 Models", "3")
+c2.metric("🤖 Models", str(len(model_info["results"])))
 c3.metric("🎮 Games", st.session_state.get("games", 0))
 g = st.session_state.get("games", 0)
 w = st.session_state.get("wins", 0)
@@ -618,6 +637,16 @@ elif st.session_state.over:
 # SIDEBAR
 # ============================================================
 
+# Rendered from the saved training results so these figures can never go
+# stale the way the hardcoded 85.7% / 92.9% did.
+_res = sorted(model_info["results"].items(), key=lambda kv: -kv[1]["test_top1"])
+model_lines = "\n".join(
+    "- %s %s — %.1f%%" % ("🥇" if i == 0 else "-",
+                               name.replace("_", " "), r["test_top1"])
+    for i, (name, r) in enumerate(_res)
+)
+best_model = model_info["best_model"].replace("_", " ")
+
 with st.sidebar:
     st.markdown("## 🧠 About This Game")
     st.markdown(f"""
@@ -626,14 +655,14 @@ the AI will guess it by asking smart
 yes/no questions!
 
 ---
-**🤖 ML Models** *(category accuracy,
-pending retraining in Phase 3)*:
-- 🌳 Decision Tree — 85.7%
-- 📊 Naive Bayes — 92.9%
-- 🧠 MLP Neural Net — 92.9%
+**🤖 Object-level models**
+*(top-1 on simulated players who get
+some answers wrong)*:
+{model_lines}
 
 **⚙️ Method:**
-Ensemble + Object Scoring + Info Gain
+Candidate filtering + info gain,
+with {best_model} as fallback
 
 **📦 Dataset:**
 {N_OBJECTS} objects, {len(feature_columns)} features
