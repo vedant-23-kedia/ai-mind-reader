@@ -22,6 +22,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from mindreader import config as cfg  # noqa: E402
 from mindreader.augment import make_noisy  # noqa: E402
+from mindreader.engine import BeliefEngine  # noqa: E402
 from mindreader.dataset import load_prototypes  # noqa: E402
 
 FAILURES: list[str] = []
@@ -82,29 +83,58 @@ def main() -> int:
 
     print()
     print("=" * 72)
-    print("3. TRUTHFUL PLAY IDENTIFIES EVERY OBJECT (hard filtering)")
+    print("3. THE BELIEF ENGINE PLAYS EVERY OBJECT (truthful answers)")
     print("=" * 72)
-    lookup = df.set_index("object")
-    ambiguous, eliminated = [], []
-    for target in df["object"]:
-        truth = lookup.loc[target]
-        survivors = df
-        for feat in features:
-            survivors = survivors[survivors[feat] == truth[feat]]
-        objs = survivors["object"].tolist()
-        if target not in objs:
-            eliminated.append(target)
-        elif len(objs) > 1:
-            ambiguous.append((target, objs))
-    check("no object is eliminated by its own truthful answers",
-          not eliminated, str(eliminated))
-    check("every object is uniquely identified by truthful answers",
-          not ambiguous,
-          "; ".join("%s -> %s" % (t, o) for t, o in ambiguous[:5]))
+    fidx = {f: i for i, f in enumerate(protos.features)}
+    wrong, lengths = [], []
+    for ti, target in enumerate(protos.names):
+        eng = BeliefEngine(protos)
+        for _ in range(30):
+            feat = eng.best_question()
+            if feat is None or eng.is_confident():
+                break
+            eng.answer(feat, int(protos.X[ti, fidx[feat]]))
+        guess, _ = eng.best_guess()
+        lengths.append(len(eng.answers))
+        if guess != target:
+            wrong.append((target, guess))
+    check("identifies all %d objects from truthful answers" % protos.n_objects,
+          not wrong, str(wrong[:5]))
+    print("         questions needed: mean %.1f, worst %d (log2(%d) = %.1f is "
+          "the noiseless floor)"
+          % (float(np.mean(lengths)), max(lengths), protos.n_objects,
+             float(np.log2(protos.n_objects))))
 
     print()
     print("=" * 72)
-    print("4. TRAINED MODEL ON CLEAN PROTOTYPES")
+    print("4. A WRONG ANSWER IS RECOVERABLE")
+    print("=" * 72)
+    # The old engine deleted candidates, so lying once about a broad question
+    # made the true object unreachable for the rest of the game.
+    recovered = 0
+    sample = protos.names[::9]
+    for target in sample:
+        ti = protos.index_of(target)
+        eng = BeliefEngine(protos)
+        first = eng.best_question()
+        eng.answer(first, 1 - int(protos.X[ti, fidx[first]]))   # lie
+        for _ in range(30):
+            feat = eng.best_question()
+            if feat is None:
+                break
+            eng.answer(feat, int(protos.X[ti, fidx[feat]]))
+            if eng.is_confident() and eng.best_guess()[0] == target:
+                break
+        if eng.best_guess()[0] == target:
+            recovered += 1
+    check("recovers from one lie on the opening question (%d/%d sampled)"
+          % (recovered, len(sample)),
+          recovered == len(sample),
+          "%d of %d failed to recover" % (len(sample) - recovered, len(sample)))
+
+    print()
+    print("=" * 72)
+    print("5. TRAINED MODEL ON CLEAN PROTOTYPES")
     print("=" * 72)
     pred = model.predict(protos.X.astype(np.int8))
     correct = int(np.sum(pred == np.arange(protos.n_objects)))
@@ -114,7 +144,7 @@ def main() -> int:
 
     print()
     print("=" * 72)
-    print("5. DEGRADATION UNDER NOISY ANSWERS")
+    print("6. DEGRADATION UNDER NOISY ANSWERS")
     print("=" * 72)
     prev = 101.0
     monotonic = True

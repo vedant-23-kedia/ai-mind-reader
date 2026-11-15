@@ -4,10 +4,12 @@ An Akinator-style guessing game. You think of an object; the app asks yes/no
 questions and works out what it is. Built on a hand-authored dataset of 117
 objects described by 141 binary attributes.
 
-> **Project status: Phases 1–3 of 6 complete.** The data layer is reproducible
-> and validated, and the models now identify the **object** rather than a broad
-> category. The game engine still deletes candidates irreversibly — that is
-> Phase 4. See [Roadmap](#roadmap).
+> **Project status: Phases 1–4 of 6 complete.** The data layer is reproducible
+> and validated, the models identify the **object** rather than a broad
+> category, and the game engine now tracks a probability distribution instead
+> of deleting candidates — so a wrong answer is recoverable, "maybe" means
+> something, and the confidence figure is a real probability.
+> See [Roadmap](#roadmap).
 
 ---
 
@@ -26,8 +28,9 @@ streamlit run app/app_final.py
 Verify an install:
 
 ```bash
-python -m pytest -q                 # 39 tests
+python -m pytest -q                 # 67 tests
 python scripts/smoke_check.py       # alignment, full-game replay, noise sweep
+python scripts/compare_engines.py   # old vs new engine, head to head
 ```
 
 Requires Python 3.12. No paths are hardcoded; everything resolves from the
@@ -73,6 +76,30 @@ This breakdown *is* the headline. A single accuracy number hides the fact that
 performance depends entirely on how carefully the human answers, which is the
 only thing that matters in a game played by humans.
 
+### Whole-game accuracy: old engine vs new
+
+Full simulated games, 8 per object across all 117, max 20 questions, with
+players also saying "maybe" 5% of the time. The old pipeline is reimplemented
+faithfully in `scripts/compare_engines.py` - hard filtering, the
+match-minus-contradiction score, and the tiered question order - so this is a
+comparison against what the project actually did.
+
+| Answers wrong | Old top-1 | **New top-1** | Old top-3 | **New top-3** | Old questions | New questions |
+|---|---|---|---|---|---|---|
+| 0% | 73.0% | **100.0%** | 78.1% | **100.0%** | 14.9 | 9.9 |
+| 5% | 44.6% | **95.6%** | 52.4% | **98.4%** | 14.1 | 12.3 |
+| 10% | 31.0% | **85.8%** | 39.0% | **92.6%** | 13.5 | 14.1 |
+| 15% | 19.3% | **67.0%** | 28.7% | **79.8%** | 13.4 | 15.9 |
+| 20% | 11.9% | **48.2%** | 20.4% | **63.6%** | 13.3 | 17.0 |
+
+**+27 to +55 points of top-1 accuracy at every noise level.**
+
+The most telling row is the first. The old engine managed only **73% against a
+player who never gets an answer wrong** - because 5% of answers were "maybe",
+which it discarded, so it burned through its 20 questions without converging.
+The new engine gets 100% in under 10 questions. Fixing "maybe" mattered as
+much as fixing recoverability.
+
 ### Three findings worth stating
 
 **1. `BernoulliNB` beats `GaussianNB` by 7.2 points** (86.2% vs 78.9%). The
@@ -115,21 +142,45 @@ how often a full game ends on the right object, and after how many questions
 
 ## How the guessing works
 
-1. **Candidate filtering** — after each answer, every object whose attribute
-   contradicts it is dropped. This is what narrows the set down.
-2. **Object scoring** — survivors are ranked by
-   `(matches − 0.5 × contradictions) / answered`; the top one becomes the
-   guess, and its score is shown as the confidence percentage.
-3. **Question selection** — a tiered, partly shuffled order while many
-   candidates remain, switching to a greedy information-gain pick at 10 or
-   fewer.
-4. **Trained model** — consulted when scoring cannot separate the survivors.
-   It predicts the object directly and is restricted to objects still in play.
+The engine keeps a **probability distribution over all 117 objects** and
+multiplies it by a likelihood after every answer:
 
-With 117 objects, an optimal questioner needs about **log₂(117) ≈ 6.9
-questions**.
+```
+P(answer | object) = 1 - noise   if the answer matches the object
+                   =     noise   if it contradicts it
+```
 
----
+Because a contradicting answer costs a factor of `noise` rather than zeroing
+an object out, a mistake is survivable - later answers can outvote it. Three
+things follow from that one change:
+
+- **Nothing is ever eliminated**, so a wrong answer is recoverable.
+- **Confidence is a real posterior probability**, not an ad-hoc score, so it
+  can be checked against how often the guess is actually right.
+- **"Maybe" works**: the attribute is marginalised out rather than counted as
+  a "no", which is what it should always have meant.
+
+This is Naive Bayes applied one question at a time. The Phase 3 comparison is
+what justifies the Bernoulli form.
+
+Questions are chosen by **expected information gain** - the question whose
+answer should shrink the entropy of the belief state the most. The old engine
+looked for a 50/50 split and only bothered below 10 candidates; this is the
+measure that heuristic was approximating, and it applies from question one.
+
+Undo works because the belief state is a pure function of the answer list.
+The old engine had destroyed the information needed to reconstruct it.
+
+### Why games take ~9 questions, not 7
+
+With 117 objects, a perfect noiseless questioner needs log2(117) = 6.9
+questions. But an answer that is wrong 10% of the time carries at most
+**1 - H(0.1) = 0.531 bits**, not a full bit, so the floor rises to about
+log2(117)/0.531 = 13 questions if you insist on near-certainty. In practice
+the engine averages **9.3 questions** on truthful play because it stops at 92%
+confidence rather than holding out for 100%. That ceiling is a property of the
+noise, not of the dataset, and the engine provably reaches it: its best opening
+question is worth 0.531 bits, exactly the channel capacity.
 
 ## Repository layout
 
@@ -139,14 +190,16 @@ src/mindreader/
   config.py                     all paths and schema constants
   dataset.py                    loads the compiled dataset
   augment.py                    the player-noise model
+  engine.py                     the Bayesian belief engine
 data/source/                    the authoring spec - edit this, not the CSV
   features.json                 attribute -> question text + group
   objects.json                  object -> category + attributes that are TRUE
   implications.json             semantic rules, e.g. is_mammal -> is_animal
 scripts/build_dataset.py        compiles the spec into the dataset
 scripts/train_models.py         trains + evaluates + plots the models
+scripts/compare_engines.py      old vs new engine, head to head
 scripts/smoke_check.py          end-to-end verification
-tests/                          39 tests
+tests/                          67 tests
 models/object_*.pkl             trained object-level models
 legacy/                         superseded category models and plots
 ```
@@ -175,17 +228,21 @@ tell apart.
 
 ## Progress by phase
 
-| Measure | Original | Phase 1 | Phase 2 | Phase 3 |
-|---|---|---|---|---|
-| Objects | 56 | 56 | 117 | 117 |
-| Attributes | 52 | 52 | 141 | 141 |
-| Min answers between two objects | 1 | 1 | **3** | 3 |
-| Pairs one answer apart | 12 | 9 | **0** | 0 |
-| What the models predict | category | category | category | **the object** |
-| Attributes the models use | 52 | 52 | 52 of 141 | **141** |
-| Meaningful accuracy figure | ✗ | ✗ | ✗ | **✓** |
-| Semantic rules enforced | 0 | 0 | 65 | 65 |
-| Tests | 0 | 17 | 20 | **39** |
+| Measure | Original | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
+|---|---|---|---|---|---|
+| Objects | 56 | 56 | 117 | 117 | 117 |
+| Attributes | 52 | 52 | 141 | 141 | 141 |
+| Min answers between two objects | 1 | 1 | **3** | 3 | 3 |
+| Pairs one answer apart | 12 | 9 | **0** | 0 | 0 |
+| What the models predict | category | category | category | **the object** | the object |
+| Attributes the models use | 52 | 52 | 52 of 141 | **141** | 141 |
+| Meaningful accuracy figure | ✗ | ✗ | ✗ | **✓** | ✓ |
+| Semantic rules enforced | 0 | 0 | 65 | 65 | 65 |
+| Wrong answer recoverable | ✗ | ✗ | ✗ | ✗ | **✓** |
+| "Maybe" does anything | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Confidence is a probability | ✗ | ✗ | ✗ | ✗ | **✓** |
+| Whole-game top-1 @ 10% noise | 31.0% | — | — | — | **85.8%** |
+| Tests | 0 | 17 | 20 | 39 | **67** |
 
 ### Phase 1 — bug fixes
 
@@ -229,17 +286,44 @@ tell apart.
 - Retired the old models and charts to `legacy/` with a note on why their
   accuracies were never meaningful.
 
+### Phase 4 — Bayesian belief engine
+
+- **Replaced irreversible filtering** (`src/mindreader/engine.py`). The old
+  engine struck off every contradicting object, so one wrong answer to a broad
+  question made the right answer unreachable. A contradiction now costs an
+  object a factor of `noise` instead.
+- **"Maybe" finally does something** — the attribute is marginalised out. This
+  turned out to matter as much as recoverability: it was why the old engine
+  scored only 73% against a *perfect* player.
+- **Undo**, possible because the belief state is a pure function of the answer
+  list.
+- **Expected information gain** replaces the 50/50 heuristic, applied from
+  question one rather than only below 10 candidates.
+- **Live belief display** — the top five objects and their probabilities, which
+  always sum to 100%.
+- **Wrong guesses are now actually logged** to `data/feedback_log.csv` with
+  every answer. The old app asked what you were thinking of, said it would
+  learn from it, and discarded it. The result screen also explains *which*
+  answers disagreed with the object you had in mind.
+- **28 engine tests** covering the maths: nothing is eliminated, one lie is
+  recoverable, "maybe" is a no-op, undo is exact, information gain never
+  exceeds the noisy-channel ceiling.
+
 ---
 
 ## Known limitations
 
-- **Filtering is still irreversible.** A minimum distance of 3 means one wrong
-  answer is survivable in principle, but the engine deletes candidates
-  outright and cannot recover. Phase 4 replaces this with Bayesian belief
-  updating.
-- **"Maybe" is discarded.** It is also approximated as "no" when the trained
-  model is consulted, because the model needs a complete binary vector.
-  Marginalising over unknown answers properly is Phase 4.
+- **The noise parameter is a single global constant** (0.10). Real players are
+  not uniformly unreliable: they are confident about `is_animal` and unsure
+  about `is_big`. A per-attribute noise vector would be more faithful, and the
+  engine already accepts one in principle.
+- **Confidence is a real probability but has not been checked for
+  calibration.** When the engine says 92%, it should be right 92% of the time.
+  Measuring that is Phase 5.
+- **The trained models no longer drive play.** The engine computes the same
+  Bayesian posterior directly and marginalises unknown answers properly, which
+  feeding zeros to a fitted model cannot do. The Phase 3 models remain as the
+  benchmark that justifies the Bernoulli form.
 - **Accuracy is measured on simulated players, not real ones.** The noise
   model assumes each answer is flipped independently at a fixed rate. Real
   players are not like that — they are reliably confident about `is_animal`
@@ -253,8 +337,8 @@ tell apart.
   information. Kept because information-gain selection already deprioritises
   weak questions.
 - **Category balance is uneven** — `Daily Object` holds 31 of 117.
-- The wrong-guess text box says it will learn from the answer, but nothing is
-  persisted.
+- **Feedback is logged but not learned from.** `data/feedback_log.csv`
+  accumulates wrong guesses; wiring it into retraining is Phase 6.
 
 ---
 
@@ -265,8 +349,8 @@ tell apart.
 | **1 — done** | Reproducible, validated, bug-free data layer; app runs anywhere |
 | **2 — done** | Minimum separation of 3 answers; 117 objects, 141 attributes, 65 semantic rules |
 | **3 — done** | Object-level models on noise-augmented data; `BernoulliNB` over `GaussianNB`; baselines |
-| 4 | Replace irreversible filtering with Bayesian belief updating + expected information gain; calibrated confidence, recoverable wrong answers, working "maybe", undo |
-| 5 | Simulated-game evaluation: how often a full game lands on the right object, after how many questions, and a calibration curve |
+| **4 — done** | Bayesian belief updating + expected information gain; recoverable wrong answers, working "maybe", undo, probability-valued confidence |
+| 5 | Calibration curve, per-attribute noise estimates, and a fuller evaluation harness |
 | 6 | Persist player feedback into a retraining loop; deploy |
 
 ---

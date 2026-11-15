@@ -70,3 +70,53 @@ def test_answering_every_question_never_raises():
         )
     assert at.session_state["over"], "game never reached a guess"
     assert at.session_state["guess"], "game ended without naming a guess"
+
+
+def test_maybe_button_records_an_unknown_answer():
+    """MAYBE must be recorded as a skipped question, not as a 'no'."""
+    at = run_app()
+    at.button(key="start_btn").click().run()
+    at.button(key="maybe_q0").click().run()
+    assert not at.exception, [str(e) for e in at.exception]
+    answers = at.session_state["answers"]
+    assert len(answers) == 1
+    assert answers[0][1] is None, "MAYBE should store None, got %r" % (answers[0][1],)
+
+
+def test_undo_removes_the_last_answer():
+    at = run_app()
+    at.button(key="start_btn").click().run()
+    at.button(key="yes_q0").click().run()
+    assert at.session_state["asked"] == 1
+    at.button(key="undo_q1").click().run()
+    assert not at.exception, [str(e) for e in at.exception]
+    assert at.session_state["asked"] == 0
+    assert at.session_state["answers"] == []
+
+
+def test_undo_is_disabled_before_any_answer():
+    at = run_app()
+    at.button(key="start_btn").click().run()
+    undo = [b for b in at.button if b.key == "undo_q0"]
+    assert undo, "undo button missing"
+    assert undo[0].disabled, "undo should be disabled with no answers yet"
+
+
+def test_game_reaches_a_guess_and_reports_a_probability():
+    """Truthful-ish play should converge and the confidence must be a probability."""
+    at = run_app()
+    at.button(key="start_btn").click().run()
+    for _ in range(25):
+        if at.session_state["over"]:
+            break
+        key = "yes_q%d" % at.session_state["asked"]
+        btns = [b for b in at.button if b.key == key]
+        if not btns:
+            break
+        btns[0].click().run()
+        assert not at.exception, [str(e) for e in at.exception]
+    assert at.session_state["over"], "game never reached a guess"
+    conf = at.session_state["confidence"]
+    assert 0.0 <= conf <= 1.0, "confidence %r is not a probability" % conf
+    assert at.session_state["guess"]
+    assert len(at.session_state["top3"]) == 3

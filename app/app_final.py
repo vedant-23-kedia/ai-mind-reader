@@ -1,23 +1,29 @@
 # ============================================================
-# AI MIND READER — FINAL VERSION with shuffled questions
-# Save as: D:\ai-mind-reader\app\app_final.py
-# Run: streamlit run app_final.py
+# AI MIND READER - Bayesian belief engine (Phase 4)
+# Run: streamlit run app/app_final.py
 # ============================================================
 
+import csv
 import json
-import random
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 import streamlit as st  # type: ignore
-import pandas as pd  # type: ignore
-import numpy as np  # type: ignore
-import joblib  # type: ignore
 
 # Make the project's own package importable no matter where streamlit is
 # launched from, so no absolute drive path is ever hardcoded.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from mindreader import config as cfg  # noqa: E402
+from mindreader.dataset import load_prototypes  # noqa: E402
+from mindreader.engine import (  # noqa: E402
+    MAYBE,
+    NO,
+    YES,
+    BeliefEngine,
+)
+
+MAX_QUESTIONS = 20
 
 st.set_page_config(
     page_title="AI Mind Reader",
@@ -107,6 +113,13 @@ st.markdown("""
         color: #00C6FF;
         margin: 0.5rem 0;
     }
+    .belief-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        color: #ddd;
+        padding: 0.15rem 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -116,261 +129,85 @@ st.markdown("""
 
 @st.cache_resource
 def load_all():
-    if not cfg.DATASET.exists():
-        raise RuntimeError(
-            "%s not found. Build it first with:\n"
-            "    python scripts/build_dataset.py" % cfg.DATASET
-        )
+    protos = load_prototypes()
+    question_map = json.loads(cfg.QUESTION_MAP.read_text(encoding="utf-8"))
 
-    df = pd.read_csv(cfg.DATASET)
-
-    for col in ["feature_sum", "category"]:
-        if col in df.columns:
-            df = df.drop(col, axis=1)
-
-    # Phase 3 model: predicts the OBJECT (117 classes) rather than one of 9
-    # categories. The old category models are kept in models/ for reference
-    # but are no longer consulted - knowing something is "Daily Object" does
-    # not tell you whether it is a spoon or a broom.
-    object_model_path = cfg.MODELS_DIR / "object_best_model.pkl"
-    if not object_model_path.exists():
-        raise RuntimeError(
-            "%s not found. Train it with:\n"
-            "    python scripts/train_models.py" % object_model_path
-        )
-    object_model = joblib.load(object_model_path)
-
-    # The model is trained on integer object indices; this file carries the
-    # index -> object-name mapping so nothing has to infer it from row order.
-    info_path = cfg.MODELS_DIR / "object_model_info.json"
-    if not info_path.exists():
-        raise RuntimeError(
-            "%s not found. Re-run: python scripts/train_models.py" % info_path)
-    model_info = json.loads(info_path.read_text(encoding="utf-8"))
-    object_classes = model_info["classes"]
-
-    category_map = pd.read_csv(cfg.CATEGORY_MAP)
-    cat_map_dict = dict(zip(category_map["object"], category_map["category"]))
-
-    # The game asks about every attribute in the DATASET. Binding the question
-    # set to the model's feature list silently discarded every attribute added
-    # after the model was last trained, so new data had no effect on play.
-    dataset_features = [c for c in df.columns if c != "object"]
-
-    # The model was fitted on a plain array, so its column order is whatever
-    # the dataset had at training time. That order is recorded in the info
-    # file and must still match, or the columns would be silently misaligned.
-    model_features = list(model_info["features"])
-    if list(model_features) != list(dataset_features):
-        raise RuntimeError(
-            "the trained model's attributes no longer match the dataset.\n"
-            "Re-run: python scripts/train_models.py"
-        )
-
-    question_order = json.loads(cfg.QUESTION_ORDER.read_text(encoding="utf-8"))
-    question_map   = json.loads(cfg.QUESTION_MAP.read_text(encoding="utf-8"))
-
-    unmapped = [f for f in dataset_features if f not in question_map]
+    unmapped = [f for f in protos.features if f not in question_map]
     if unmapped:
-        raise RuntimeError("features with no question text: %s" % unmapped)
+        raise RuntimeError("attributes with no question text: %s" % unmapped)
 
-    return (df, object_model, object_classes, cat_map_dict, question_order,
-            question_map, dataset_features, model_features, model_info)
+    cats: dict[str, str] = dict(zip(protos.names, protos.categories))
 
-(df, object_model, object_classes, cat_map_dict, question_order,
- question_map, feature_columns, model_features, model_info) = load_all()
+    # Phase 3 benchmark figures, shown in the sidebar. Rendered from the file
+    # the training script writes, so they cannot go stale the way the
+    # hardcoded 85.7% / 92.9% figures did.
+    info_path = cfg.MODELS_DIR / "object_model_info.json"
+    model_info = (json.loads(info_path.read_text(encoding="utf-8"))
+                  if info_path.exists() else None)
+    return protos, question_map, cats, model_info
 
-# Built once. The original code called df[df["object"] == obj] inside nested
-# loops, rescanning every row for every candidate on every question.
-feature_lookup = df.set_index("object")
 
-N_OBJECTS = len(df)
+protos, question_map, cat_map_dict, model_info = load_all()
 
-# ============================================================
-# SMART QUESTION SHUFFLER
-# Splits questions into tiers — broad questions first,
-# specific questions shuffled within each tier
-# This ensures different game experience each time
-# ============================================================
+N_OBJECTS = protos.n_objects
+N_FEATURES = protos.n_features
 
-def get_shuffled_question_order(question_order, feature_columns):
-    # Tier 1 — ALWAYS ask these first (broad category questions)
-    tier1 = [
-        "is_living", "is_animal", "is_character", "made_by_humans",
-        "is_fictional", "is_natural"
-    ]
 
-    # Tier 2 — Ask these second (mid-level questions)
-    tier2 = [
-        "is_electronic", "is_wearable", "is_vehicle", "is_food",
-        "is_edible", "is_marvel", "is_cartoons", "is_musical",
-        "can_fly", "can_swim", "is_big", "used_daily"
-    ]
+def build_engine() -> BeliefEngine:
+    """Rebuild the belief state from the answers recorded this game.
 
-    # Tier 3 — Ask these last (specific distinguishing questions)
-    # Everything not in tier1 or tier2
-    tier3 = [q for q in question_order
-             if q not in tier1 and q not in tier2]
+    The posterior is a pure function of the answer list, so there is no
+    hidden state to keep in sync - which is exactly what makes undo possible.
+    """
+    eng = BeliefEngine(protos)
+    for feat, val in st.session_state.answers:
+        eng.answer(feat, val)
+    return eng
 
-    # Filter to only include features that exist in model
-    t1 = [q for q in tier1 if q in feature_columns]
-    t2 = [q for q in tier2 if q in feature_columns]
-    t3 = [q for q in tier3 if q in feature_columns]
 
-    # Shuffle tier2 and tier3 so each game is different
-    random.shuffle(t2)
-    random.shuffle(t3)
+def log_feedback(guess: str, actual: str, answers) -> None:
+    """Record a wrong guess so it can be learned from later.
 
-    # Combine: fixed broad → shuffled mid → shuffled specific
-    final_order = t1 + t2 + t3
+    The original app asked what the player was thinking of and then threw the
+    answer away, while telling them it would learn from it.
+    """
+    try:
+        new = not cfg.FEEDBACK_LOG.exists()
+        with cfg.FEEDBACK_LOG.open("a", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            if new:
+                w.writerow(["timestamp", "guessed", "actual", "n_answers",
+                            "answers_json"])
+            w.writerow([
+                datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                guess, actual.strip(), len(answers),
+                json.dumps({f: v for f, v in answers}),
+            ])
+        return True
+    except OSError:
+        return False
 
-    # Add any remaining features not covered
-    for q in question_order:
-        if q not in final_order and q in feature_columns:
-            final_order.append(q)
-
-    return final_order
-
-# ============================================================
-# GAME FUNCTIONS
-# ============================================================
-
-def filter_candidates(answers_so_far):
-    candidates = df.copy()
-    for feature, value in answers_so_far.items():
-        if feature not in candidates.columns:
-            continue
-        if value == 1:
-            candidates = candidates[candidates[feature] == 1]
-        elif value == 0:
-            candidates = candidates[candidates[feature] == 0]
-    return candidates["object"].tolist()
-
-def get_object_scores(answers_so_far, remaining_candidates):
-    # Score based on how many answers MATCH each object
-    # Also penalize objects that CONTRADICT answers
-    scores = {}
-    for _, row in df.iterrows():
-        obj = row["object"]
-        if obj not in remaining_candidates:
-            continue
-        match   = 0
-        contra  = 0
-        total   = 0
-        for feat, answer in answers_so_far.items():
-            if feat not in df.columns or answer == 0.5:
-                continue
-            total += 1
-            if row[feat] == answer:
-                match += 1
-            else:
-                contra += 1
-
-        if total > 0:
-            # Match score minus penalty for contradictions
-            score = ((match - (contra * 0.5)) / total) * 100
-            scores[obj] = round(max(score, 0), 2)
-        else:
-            scores[obj] = 50.0
-
-    return sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
-def get_best_next_question(remaining_candidates, asked_features, all_question_order):
-    # Find the question that splits remaining candidates most evenly
-    # This is Information Gain — best question = closest to 50/50 split
-    if len(remaining_candidates) <= 1:
-        return None
-
-    best_feat  = None
-    best_split = float("inf")
-
-    for feat in all_question_order:
-        if feat not in feature_columns:
-            continue
-        if feat in asked_features:
-            continue
-        if feat not in df.columns:
-            continue
-
-        # The original version indexed .values[0] BEFORE checking that the
-        # object existed, so an unknown candidate raised IndexError, and it
-        # re-scanned the whole dataframe once per candidate per question.
-        known = [o for o in remaining_candidates if o in feature_lookup.index]
-        if not known:
-            continue
-        yes_count = int(feature_lookup.loc[known, feat].sum())
-        no_count  = len(known) - yes_count
-
-        # Best question = closest to 50/50 split
-        split_diff = abs(yes_count - no_count)
-        if split_diff < best_split:
-            best_split = split_diff
-            best_feat  = feat
-
-    return best_feat
-
-def make_final_guess(answers_so_far, remaining_candidates):
-    if len(remaining_candidates) == 1:
-        scores = get_object_scores(answers_so_far, remaining_candidates)
-        conf   = scores[0][1] if scores else 90.0
-        return remaining_candidates[0], conf
-
-    # Use all objects if no candidates remain
-    search_pool = remaining_candidates if remaining_candidates else df["object"].tolist()
-
-    scores = get_object_scores(answers_so_far, search_pool)
-    if scores and scores[0][1] > 0:
-        return scores[0][0], min(scores[0][1], 99.0)
-
-    # Fall back to the trained model. It predicts the OBJECT directly, so the
-    # old behaviour - predict a category, then return whichever object
-    # happened to be listed first in it - is gone.
-    #
-    # Unanswered and "maybe" attributes are passed as 0 because the model
-    # needs a complete binary vector. That is a real approximation: it treats
-    # "I don't know" as "no". Marginalising over unknown answers properly is
-    # what the Phase 4 Bayesian engine does, and it will replace this.
-    row = [1 if answers_so_far.get(f) == 1 else 0 for f in model_features]
-    proba = object_model.predict_proba(np.array([row]))[0]
-
-    # Restrict to objects still in play, so the model cannot name something
-    # the player's answers have already ruled out.
-    pool = set(search_pool)
-    ranked = sorted(
-        ((p, object_classes[int(c)]) for p, c in zip(proba, object_model.classes_)),
-        key=lambda t: -t[0],
-    )
-    for p, obj in ranked:
-        if obj in pool:
-            return obj, round(float(p) * 100, 2)
-
-    # Nothing in the pool at all: return the model's overall best guess.
-    p, obj = ranked[0]
-    return obj, round(float(p) * 100, 2)
 
 # ============================================================
 # SESSION STATE
 # ============================================================
 
 def reset_game():
-    wins  = st.session_state.get("wins", 0)
+    wins = st.session_state.get("wins", 0)
     games = st.session_state.get("games", 0)
     st.session_state.clear()
-    st.session_state.wins            = wins
-    st.session_state.games           = games
-    st.session_state.started         = False
-    st.session_state.over            = False
-    st.session_state.answers         = {}
-    st.session_state.asked           = 0
-    st.session_state.candidates      = df["object"].tolist()
-    st.session_state.confidence      = 0.0
-    st.session_state.guess           = ""
-    st.session_state.correct         = None
-    # Generate NEW shuffled question order for each game
-    st.session_state.game_q_order    = get_shuffled_question_order(
-        question_order, feature_columns
-    )
-    st.session_state.q_pointer       = 0
+    st.session_state.wins = wins
+    st.session_state.games = games
+    st.session_state.started = False
+    st.session_state.over = False
+    st.session_state.answers = []      # list of (feature, YES/NO/MAYBE)
+    st.session_state.asked = 0
+    st.session_state.guess = ""
+    st.session_state.confidence = 0.0
+    st.session_state.top3 = []
+    st.session_state.correct = None
+    st.session_state.logged = False
+
 
 if "started" not in st.session_state:
     reset_game()
@@ -385,16 +222,16 @@ st.markdown('<div class="sub-title">✨ Think of anything — I will read your m
 
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("🎯 Objects", str(N_OBJECTS))
-c2.metric("🤖 Models", str(len(model_info["results"])))
+c2.metric("❓ Attributes", str(N_FEATURES))
 c3.metric("🎮 Games", st.session_state.get("games", 0))
 g = st.session_state.get("games", 0)
 w = st.session_state.get("wins", 0)
-c4.metric("🏆 AI Wins", str(round(w/g*100)) + "%" if g > 0 else "—")
+c4.metric("🏆 AI Wins", str(round(w / g * 100)) + "%" if g > 0 else "—")
 
 st.markdown("---")
 
 # ============================================================
-# SCREEN 1 — HOME
+# SCREEN 1 - HOME
 # ============================================================
 
 if not st.session_state.started and not st.session_state.over:
@@ -406,12 +243,20 @@ if not st.session_state.started and not st.session_state.over:
         st.markdown("**2.** 🚀 Click Start Game")
     with col_r:
         st.markdown("**3.** ✅ Answer Yes / No / Maybe")
-        st.markdown("**4.** 🎯 AI will guess it!")
+        st.markdown("**4.** 🎯 The AI will guess it!")
 
     st.markdown("")
+    st.markdown(
+        '<div class="hint-box">🛟 Get one wrong? It no longer matters. '
+        'The AI keeps a probability for every object instead of crossing them '
+        'off, so a mistake can be outvoted by your later answers — and you can '
+        'undo mid-game.</div>',
+        unsafe_allow_html=True,
+    )
 
+    st.markdown("")
     with st.expander(f"📋 See all {N_OBJECTS} objects you can think of"):
-        grouped = {}
+        grouped: dict[str, list[str]] = {}
         for obj, cat in cat_map_dict.items():
             grouped.setdefault(cat, []).append(obj)
         for cat, objs in sorted(grouped.items()):
@@ -424,138 +269,123 @@ if not st.session_state.started and not st.session_state.over:
         st.rerun()
 
 # ============================================================
-# SCREEN 2 — GAME IN PROGRESS
+# SCREEN 2 - GAME IN PROGRESS
 # ============================================================
 
 elif st.session_state.started and not st.session_state.over:
 
-    asked      = st.session_state.asked
-    max_q      = 20
-    candidates = st.session_state.candidates
-    game_order = st.session_state.game_q_order
+    engine = build_engine()
+    asked = st.session_state.asked
+    top3 = engine.top(3)
+    best_obj, best_p = top3[0]
 
-    # Progress
-    st.progress(asked / max_q)
+    st.progress(min(asked / MAX_QUESTIONS, 1.0))
     pa, pb = st.columns(2)
-    pa.markdown(f"**🔢 Question {asked + 1} / {max_q}**")
-    pb.markdown(f"**🎯 Candidates: {len(candidates)}**")
+    pa.markdown(f"**🔢 Question {asked + 1} / {MAX_QUESTIONS}**")
+    pb.markdown(f"**🎲 Uncertainty: {engine.entropy():.1f} bits**")
 
-    # Confidence
-    if asked >= 3 and st.session_state.confidence > 0:
-        conf_val = st.session_state.confidence
-        emoji    = "🟢" if conf_val >= 80 else ("🟡" if conf_val >= 50 else "🔴")
-        st.markdown(f"**{emoji} AI Confidence: {round(conf_val, 1)}%**")
-        st.progress(min(conf_val / 100, 1.0))
+    if asked >= 2:
+        emoji = "🟢" if best_p >= 0.8 else ("🟡" if best_p >= 0.4 else "🔴")
+        st.markdown(f"**{emoji} Confidence in top guess: {best_p * 100:.1f}%**")
+        st.progress(float(min(best_p, 1.0)))
+
+        with st.expander("🧠 What the AI currently believes"):
+            for name, p in engine.top(5):
+                st.markdown(
+                    f'<div class="belief-row"><span>{name}</span>'
+                    f'<span>{p * 100:.1f}%</span></div>',
+                    unsafe_allow_html=True,
+                )
+            st.caption(
+                "These are posterior probabilities over all "
+                f"{N_OBJECTS} objects and always sum to 100%. Nothing is ever "
+                "eliminated, so every object keeps a non-zero chance."
+            )
 
     st.markdown("")
 
-    # Guess condition
-    should_guess = (
-        (len(candidates) == 1 and asked >= 3) or
-        asked >= max_q or
-        (st.session_state.confidence >= 96.0 and asked >= 6)
-    )
+    should_guess = engine.is_confident() or asked >= MAX_QUESTIONS
 
     if should_guess:
-        final_obj, final_conf         = make_final_guess(st.session_state.answers, candidates)
-        st.session_state.guess        = final_obj
-        st.session_state.confidence   = final_conf
-        st.session_state.over         = True
-        st.session_state.games       += 1
+        st.session_state.guess = best_obj
+        st.session_state.confidence = float(best_p)
+        st.session_state.top3 = [(n, float(p)) for n, p in top3]
+        st.session_state.over = True
+        st.session_state.games += 1
         st.rerun()
 
     else:
-        # SMART QUESTION SELECTION
-        # When candidates > 10: use shuffled pre-generated order
-        # When candidates <= 10: use information gain to pick best next question
-        asked_feats = set(st.session_state.answers.keys())
+        current_feat = engine.best_question()
 
-        if len(candidates) <= 10 and len(candidates) > 1:
-            # Use information gain for smart selection
-            current_feat = get_best_next_question(candidates, asked_feats, game_order)
-            if current_feat is None:
-                # Fallback to next in order
-                ptr = st.session_state.q_pointer
-                while ptr < len(game_order) and game_order[ptr] in asked_feats:
-                    ptr += 1
-                st.session_state.q_pointer = ptr
-                current_feat = game_order[ptr] if ptr < len(game_order) else None
+        if current_feat is None:
+            # Out of questions to ask: guess with what we have.
+            st.session_state.guess = best_obj
+            st.session_state.confidence = float(best_p)
+            st.session_state.top3 = [(n, float(p)) for n, p in top3]
+            st.session_state.over = True
+            st.session_state.games += 1
+            st.rerun()
         else:
-            # Use shuffled order
-            ptr = st.session_state.q_pointer
-            while ptr < len(game_order) and game_order[ptr] in asked_feats:
-                ptr += 1
-            st.session_state.q_pointer = ptr
-            current_feat = game_order[ptr] if ptr < len(game_order) else None
-
-        if current_feat and current_feat in question_map:
-            question_txt = question_map[current_feat]
-
             st.markdown(
-                f'<div class="question-card">❓ {question_txt}</div>',
+                f'<div class="question-card">❓ {question_map[current_feat]}</div>',
                 unsafe_allow_html=True
             )
 
-            # Hint when narrowed down
-            if 1 < len(candidates) <= 5:
-                st.markdown(
-                    f'<div class="hint-box">🔍 Narrowed to: <b>{", ".join(candidates)}</b></div>',
-                    unsafe_allow_html=True
-                )
-
-            st.markdown("")
-
+            answer_given = "none"
             b1, b2, b3 = st.columns(3)
-            answer_given = None
-
             with b1:
                 if st.button("✅  YES", use_container_width=True,
                              type="primary", key=f"yes_q{asked}"):
-                    answer_given = 1
+                    answer_given = YES
             with b2:
                 if st.button("❌  NO", use_container_width=True,
                              key=f"no_q{asked}"):
-                    answer_given = 0
+                    answer_given = NO
             with b3:
                 if st.button("🤔  MAYBE", use_container_width=True,
                              key=f"maybe_q{asked}"):
-                    answer_given = 0.5
+                    answer_given = MAYBE
 
-            if answer_given is not None:
-                st.session_state.answers[current_feat] = answer_given
-                st.session_state.asked                += 1
-                st.session_state.q_pointer            += 1
-                st.session_state.candidates            = filter_candidates(
-                    st.session_state.answers
-                )
-                remaining = st.session_state.candidates
-                if st.session_state.asked >= 3:
-                    pool   = remaining if remaining else df["object"].tolist()
-                    scores = get_object_scores(st.session_state.answers, pool)
-                    st.session_state.confidence = scores[0][1] if scores else 50.0
+            if answer_given != "none":
+                st.session_state.answers.append((current_feat, answer_given))
+                st.session_state.asked += 1
                 st.rerun()
 
-        st.markdown("")
-        if st.button("🏳️  Give Up & See AI Guess", key=f"giveup_q{asked}"):
-            final_obj, final_conf         = make_final_guess(
-                st.session_state.answers, candidates
+            st.caption(
+                "“Maybe” genuinely skips the question — the attribute is "
+                "left out of the calculation rather than counted as a no."
             )
-            st.session_state.guess        = final_obj
-            st.session_state.confidence   = final_conf
-            st.session_state.over         = True
-            st.session_state.games       += 1
-            st.rerun()
+
+            st.markdown("")
+            u1, u2 = st.columns(2)
+            with u1:
+                if st.button("↩️  Undo last answer", use_container_width=True,
+                             disabled=not st.session_state.answers,
+                             key=f"undo_q{asked}"):
+                    st.session_state.answers.pop()
+                    st.session_state.asked = max(0, st.session_state.asked - 1)
+                    st.rerun()
+            with u2:
+                if st.button("🏳️  Give up & see my guess",
+                             use_container_width=True, key=f"giveup_q{asked}"):
+                    st.session_state.guess = best_obj
+                    st.session_state.confidence = float(best_p)
+                    st.session_state.top3 = [(n, float(p)) for n, p in top3]
+                    st.session_state.over = True
+                    st.session_state.games += 1
+                    st.rerun()
 
 # ============================================================
-# SCREEN 3 — RESULT
+# SCREEN 3 - RESULT
 # ============================================================
 
 elif st.session_state.over:
 
     final_obj = st.session_state.guess
-    conf      = round(st.session_state.confidence, 1)
-    asked     = st.session_state.asked
-    category  = cat_map_dict.get(final_obj, "Unknown")
+    conf = st.session_state.confidence
+    asked = st.session_state.asked
+    category = cat_map_dict.get(final_obj, "Unknown")
+    top3 = st.session_state.get("top3", [])
 
     st.markdown(f"### 🎯 After **{asked}** questions...")
     st.markdown("")
@@ -566,10 +396,18 @@ elif st.session_state.over:
         <div class="guess-object">{final_obj.upper()}</div>
         <div class="guess-meta">
             📂 Category: {category} &nbsp;&nbsp;|&nbsp;&nbsp;
-            📊 Confidence: {conf}%
+            📊 Probability: {conf * 100:.1f}%
         </div>
     </div>
     """, unsafe_allow_html=True)
+
+    if len(top3) > 1:
+        runners = " · ".join(f"{n} ({p * 100:.1f}%)" for n, p in top3[1:])
+        st.markdown(
+            f'<div class="hint-box">🥈 If that is wrong, my next guesses are: '
+            f'{runners}</div>',
+            unsafe_allow_html=True,
+        )
 
     st.markdown("")
     st.markdown("### Was I correct?")
@@ -578,11 +416,11 @@ elif st.session_state.over:
     with r1:
         if st.button("✅  Yes! You got it!", type="primary",
                      use_container_width=True, key="correct_btn"):
-            st.session_state.correct  = True
-            st.session_state.wins    += 1
+            st.session_state.correct = True
+            st.session_state.wins += 1
             st.rerun()
     with r2:
-        if st.button("❌  Nope, Wrong!", use_container_width=True,
+        if st.button("❌  Nope, wrong!", use_container_width=True,
                      key="wrong_btn"):
             st.session_state.correct = False
             st.rerun()
@@ -603,10 +441,33 @@ elif st.session_state.over:
         )
         correct_input = st.text_input(
             "What were you thinking of?",
-            placeholder="Type it here so I can learn..."
+            placeholder="Type it here so I can learn...",
+            key="actual_input",
         )
-        if correct_input:
-            st.success("Thanks! You were thinking of **" + correct_input + "**! 🧠")
+        if correct_input and not st.session_state.get("logged"):
+            ok = log_feedback(final_obj, correct_input,
+                              st.session_state.answers)
+            st.session_state.logged = True
+            if ok:
+                st.success(
+                    f"Saved — you were thinking of **{correct_input}**. "
+                    f"Logged to `{cfg.FEEDBACK_LOG.name}` with all "
+                    f"{len(st.session_state.answers)} of your answers."
+                )
+            else:
+                st.warning("Could not write the feedback log.")
+
+        if correct_input and correct_input.strip() in protos.names:
+            eng = build_engine()
+            missed = eng.contradictions(correct_input.strip())
+            if missed:
+                st.markdown(
+                    '<div class="hint-box">🔍 Your answers disagreed with '
+                    f'<b>{correct_input.strip()}</b> on: '
+                    f'{"; ".join(question_map.get(f, f) for f in missed[:4])}'
+                    '</div>',
+                    unsafe_allow_html=True,
+                )
 
     if st.session_state.correct is not None:
         st.markdown("")
@@ -614,17 +475,18 @@ elif st.session_state.over:
 
         m1, m2, m3, m4 = st.columns(4)
         m1.metric("❓ Questions", asked)
-        m2.metric("📊 Confidence", str(conf) + "%")
+        m2.metric("📊 Probability", f"{conf * 100:.1f}%")
         m3.metric("🎮 Total Games", st.session_state.games)
         g = st.session_state.games
         w = st.session_state.wins
         m4.metric("🏆 AI Win Rate",
-                  str(round(w/g*100)) + "%" if g > 0 else "0%")
+                  str(round(w / g * 100)) + "%" if g > 0 else "0%")
 
         with st.expander("📝 Review all your answers"):
-            for feat, val in st.session_state.answers.items():
-                q   = question_map.get(feat, feat)
-                ans = "Yes ✅" if val == 1 else ("No ❌" if val == 0 else "Maybe 🤔")
+            for feat, val in st.session_state.answers:
+                q = question_map.get(feat, feat)
+                ans = ("Yes ✅" if val == YES
+                       else ("No ❌" if val == NO else "Maybe 🤔"))
                 st.markdown(f"**{q}** → {ans}")
 
         st.markdown("")
@@ -637,37 +499,44 @@ elif st.session_state.over:
 # SIDEBAR
 # ============================================================
 
-# Rendered from the saved training results so these figures can never go
-# stale the way the hardcoded 85.7% / 92.9% did.
-_res = sorted(model_info["results"].items(), key=lambda kv: -kv[1]["test_top1"])
-model_lines = "\n".join(
-    "- %s %s — %.1f%%" % ("🥇" if i == 0 else "-",
-                               name.replace("_", " "), r["test_top1"])
-    for i, (name, r) in enumerate(_res)
-)
-best_model = model_info["best_model"].replace("_", " ")
+if model_info:
+    _res = sorted(model_info["results"].items(), key=lambda kv: -kv[1]["test_top1"])
+    bench_lines = "\n".join(
+        "- %s — %.1f%%" % (name.replace("_", " "), r["test_top1"])
+        for name, r in _res[:3]
+    )
+else:
+    bench_lines = "- (run scripts/train_models.py)"
 
 with st.sidebar:
     st.markdown("## 🧠 About This Game")
     st.markdown(f"""
 Think of any object from the list and
 the AI will guess it by asking smart
-yes/no questions!
+yes/no questions.
 
 ---
-**🤖 Object-level models**
-*(top-1 on simulated players who get
-some answers wrong)*:
-{model_lines}
+**⚙️ How it works**
 
-**⚙️ Method:**
-Candidate filtering + info gain,
-with {best_model} as fallback
+It keeps a probability for all
+{N_OBJECTS} objects and updates them
+after each answer (Bayes' rule), then
+asks whichever question should tell it
+the most (expected information gain).
 
-**📦 Dataset:**
-{N_OBJECTS} objects, {len(feature_columns)} features
+A wrong answer costs an object some
+probability instead of eliminating it,
+so mistakes are survivable.
 
-**🛠️ Stack:**
+---
+**📈 Model benchmarks**
+*(top-1 on noisy simulated players)*
+{bench_lines}
+
+**📦 Dataset**
+{N_OBJECTS} objects, {N_FEATURES} attributes
+
+**🛠️ Stack**
 Python • scikit-learn • Streamlit
 
 ---
