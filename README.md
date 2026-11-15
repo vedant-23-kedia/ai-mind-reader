@@ -4,11 +4,12 @@ An Akinator-style guessing game. You think of an object; the app asks yes/no
 questions and works out what it is. Built on a hand-authored dataset of 117
 objects described by 141 binary attributes.
 
-> **Project status: Phases 1–4 of 6 complete.** The data layer is reproducible
+> **Project status: Phases 1–5 of 6 complete.** The data layer is reproducible
 > and validated, the models identify the **object** rather than a broad
 > category, and the game engine now tracks a probability distribution instead
 > of deleting candidates — so a wrong answer is recoverable, "maybe" means
-> something, and the confidence figure is a real probability.
+> something, and the confidence figure is a real probability that has now been
+> **verified calibrated** (expected calibration error 0.010).
 > See [Roadmap](#roadmap).
 
 ---
@@ -28,9 +29,10 @@ streamlit run app/app_final.py
 Verify an install:
 
 ```bash
-python -m pytest -q                 # 67 tests
+python -m pytest -q                 # 85 tests
 python scripts/smoke_check.py       # alignment, full-game replay, noise sweep
 python scripts/compare_engines.py   # old vs new engine, head to head
+python scripts/evaluate.py          # accuracy, calibration, sensitivity (~3 min)
 ```
 
 Requires Python 3.12. No paths are hardcoded; everything resolves from the
@@ -99,6 +101,102 @@ player who never gets an answer wrong** - because 5% of answers were "maybe",
 which it discarded, so it burned through its 20 questions without converging.
 The new engine gets 100% in under 10 questions. Fixing "maybe" mattered as
 much as fixing recoverability.
+
+### Calibration: is the confidence figure trustworthy?
+
+Accuracy says how often the guess is right. Calibration asks something
+different and more demanding: **when the engine claims 92%, is it right 92% of
+the time?** A confidence number that fails this is decoration.
+
+Measured over 13,244 prediction steps from complete games — every step, not
+just final guesses, because final confidences cluster near the stopping
+threshold and would leave the low end of the range untested.
+
+| Claimed confidence | Mean claim | Actually right | Steps |
+|---|---|---|---|
+| 0–10% | 4.7% | 4.9% | 5063 |
+| 10–20% | 14.7% | 13.8% | 2122 |
+| 20–30% | 24.8% | 26.8% | 1263 |
+| 30–40% | 34.5% | 37.0% | 791 |
+| 40–50% | 44.6% | 44.1% | 765 |
+| 50–60% | 55.1% | 57.8% | 386 |
+| 60–70% | 65.0% | 70.2% | 473 |
+| 70–80% | 75.3% | 75.1% | 655 |
+| 80–90% | 85.9% | 84.8% | 895 |
+| 90–100% | 94.5% | 94.0% | 831 |
+
+**Expected calibration error: 0.010.** Mean confidence minus actual accuracy:
+**−0.004**, i.e. a touch *under*confident.
+
+![calibration](data/plots/calibration.png)
+
+It holds at the whole-game level too — mean final confidence tracks accuracy
+at every noise level:
+
+| Player error rate | 0% | 5% | 10% | 15% | 20% |
+|---|---|---|---|---|---|
+| Mean confidence claimed | 97.0% | 93.7% | 84.4% | 68.3% | 49.3% |
+| Actual top-1 accuracy | 100.0% | 93.5% | 85.8% | 70.2% | 49.9% |
+
+### I predicted the opposite, and was wrong
+
+Naive Bayes is overconfident when its inputs are dependent, and these
+provably are: the dataset *enforces* 65 implication rules like
+`is_mammal → is_animal`, so answering both looks like counting one fact
+twice. I added a `likelihood_weight` knob to discount each answer and fitted
+it over a grid. The best value came out at **1.0** — no correction needed.
+Every lower value made calibration monotonically *worse*.
+
+My first explanation was that information gain never asks a redundant
+question. That was testable, so I tested it, and **it was also wrong**:
+implication-linked attributes get asked together *more* often (3.2% of pairs
+per game) than unrelated ones (1.1%).
+
+The actual reason is that this is not really *naive* Bayes. Naive Bayes
+approximates `P(features | class)` as a product; here that product is not an
+approximation, it is exactly the simulated noise process, since answers are
+flipped independently at a known rate. And with only 117 objects the engine
+enumerates the whole hypothesis space rather than assuming anything about it.
+The implication rules constrain *which prototype vectors exist*, not *how
+answers get corrupted* — so there is no independence assumption left to
+violate.
+
+**Which makes this result partly circular, and that is worth saying plainly:**
+it confirms the arithmetic is right, not that the noise model is realistic.
+Against real players — reliably sure about `is_animal`, reliably vague about
+`is_big` — the model would be misspecified and calibration should degrade.
+`data/feedback_log.csv` is what would eventually measure that.
+
+### Does the assumed error rate matter?
+
+The engine assumes players answer wrongly 10% of the time. You never actually
+know that, so the assumption is worth stress-testing. Rows are what the engine
+assumes, columns what the player actually does:
+
+| | true 0% | true 5% | true 10% | true 15% | true 20% |
+|---|---|---|---|---|---|
+| assumes 5% | 100.0% | 95.5% | 85.0% | 62.8% | 44.9% |
+| assumes 10% | 100.0% | 94.9% | 84.8% | 69.2% | 46.6% |
+| assumes 15% | 100.0% | 96.8% | 87.4% | 74.4% | 47.4% |
+| assumes 20% | 99.8% | 97.4% | 87.6% | 70.5% | 48.9% |
+
+Accuracy is largely flat down each column, so the engine is not sensitive to
+getting this wrong — which matters, because in deployment it always will be.
+Assuming a *higher* error rate than the truth is mildly better than assuming a
+lower one, at the cost of more questions. The default stays at 10% because it
+is where calibration is tightest.
+
+### Where it still fails
+
+| Object | Accuracy @ 10% noise | Usually mistaken for |
+|---|---|---|
+| Scissors | 38% | Screwdriver |
+| Tree | 50% | — |
+| Bicycle, Charger, Newspaper, Clouds, Comb, Elephant | 62% | Elephant→Horse, Washing_Machine→Mixer_Grinder |
+
+These are the objects whose nearest neighbours sit exactly on the three-answer
+separability floor. Raising the gate to four answers is the direct fix and
+would need new attributes — the same loop Phase 2 ran.
 
 ### Three findings worth stating
 
@@ -191,6 +289,7 @@ src/mindreader/
   dataset.py                    loads the compiled dataset
   augment.py                    the player-noise model
   engine.py                     the Bayesian belief engine
+  evaluation.py                 game simulation + calibration maths
 data/source/                    the authoring spec - edit this, not the CSV
   features.json                 attribute -> question text + group
   objects.json                  object -> category + attributes that are TRUE
@@ -198,8 +297,10 @@ data/source/                    the authoring spec - edit this, not the CSV
 scripts/build_dataset.py        compiles the spec into the dataset
 scripts/train_models.py         trains + evaluates + plots the models
 scripts/compare_engines.py      old vs new engine, head to head
+scripts/evaluate.py             accuracy, calibration, sensitivity
 scripts/smoke_check.py          end-to-end verification
-tests/                          67 tests
+notebooks/01_evaluation.ipynb   walkthrough of the generated results
+tests/                          85 tests
 models/object_*.pkl             trained object-level models
 legacy/                         superseded category models and plots
 ```
@@ -228,21 +329,22 @@ tell apart.
 
 ## Progress by phase
 
-| Measure | Original | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
-|---|---|---|---|---|---|
-| Objects | 56 | 56 | 117 | 117 | 117 |
-| Attributes | 52 | 52 | 141 | 141 | 141 |
-| Min answers between two objects | 1 | 1 | **3** | 3 | 3 |
-| Pairs one answer apart | 12 | 9 | **0** | 0 | 0 |
-| What the models predict | category | category | category | **the object** | the object |
-| Attributes the models use | 52 | 52 | 52 of 141 | **141** | 141 |
-| Meaningful accuracy figure | ✗ | ✗ | ✗ | **✓** | ✓ |
-| Semantic rules enforced | 0 | 0 | 65 | 65 | 65 |
-| Wrong answer recoverable | ✗ | ✗ | ✗ | ✗ | **✓** |
-| "Maybe" does anything | ✗ | ✗ | ✗ | ✗ | **✓** |
-| Confidence is a probability | ✗ | ✗ | ✗ | ✗ | **✓** |
-| Whole-game top-1 @ 10% noise | 31.0% | — | — | — | **85.8%** |
-| Tests | 0 | 17 | 20 | 39 | **67** |
+| Measure | Original | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 |
+|---|---|---|---|---|---|---|
+| Objects | 56 | 56 | 117 | 117 | 117 | 117 |
+| Attributes | 52 | 52 | 141 | 141 | 141 | 141 |
+| Min answers between two objects | 1 | 1 | **3** | 3 | 3 | 3 |
+| Pairs one answer apart | 12 | 9 | **0** | 0 | 0 | 0 |
+| What the models predict | category | category | category | **the object** | the object | the object |
+| Attributes the models use | 52 | 52 | 52 of 141 | **141** | 141 | 141 |
+| Meaningful accuracy figure | ✗ | ✗ | ✗ | **✓** | ✓ | ✓ |
+| Semantic rules enforced | 0 | 0 | 65 | 65 | 65 | 65 |
+| Wrong answer recoverable | ✗ | ✗ | ✗ | ✗ | **✓** | **✓** |
+| "Maybe" does anything | ✗ | ✗ | ✗ | ✗ | **✓** | **✓** |
+| Confidence is a probability | ✗ | ✗ | ✗ | ✗ | **✓** | **✓** |
+| Whole-game top-1 @ 10% noise | 31.0% | — | — | — | **85.8%** | **85.8%** |
+| Confidence calibrated | ✗ | ✗ | ✗ | ✗ | unverified | **✓ 0.010** |
+| Tests | 0 | 17 | 20 | 39 | 67 | **85** |
 
 ### Phase 1 — bug fixes
 
@@ -309,17 +411,42 @@ tell apart.
   recoverable, "maybe" is a no-op, undo is exact, information gain never
   exceeds the noisy-channel ceiling.
 
+### Phase 5 — evaluation and calibration
+
+- **Verified the confidence figure is calibrated** (ECE 0.010) over 13,244
+  prediction steps, and that mean confidence tracks accuracy at every noise
+  level.
+- **Added a miscalibration correction, fitted it, and found it unnecessary** —
+  the knob stays in `engine.py`, documented, with the measurement that says
+  1.0 is optimal.
+- **Disproved my own explanation** for the good calibration by measuring
+  redundant-question co-occurrence, then recorded the correct reason and the
+  fact that the result is partly circular.
+- **Sensitivity analysis** over assumed vs true player error rate.
+- **Per-object results and confusion pairs**, which point straight at the
+  objects sitting on the three-answer separability floor.
+- **14 evaluation tests** covering the calibration maths against hand-built
+  cases where the answer is known by construction.
+- `notebooks/01_evaluation.ipynb` reads the generated artifacts rather than
+  recomputing, so the notebook and the README cannot disagree.
+
 ---
 
 ## Known limitations
 
 - **The noise parameter is a single global constant** (0.10). Real players are
   not uniformly unreliable: they are confident about `is_animal` and unsure
-  about `is_big`. A per-attribute noise vector would be more faithful, and the
-  engine already accepts one in principle.
-- **Confidence is a real probability but has not been checked for
-  calibration.** When the engine says 92%, it should be right 92% of the time.
-  Measuring that is Phase 5.
+  about `is_big`. Estimating per-attribute rates needs real player data, which
+  is what `data/feedback_log.csv` is for — so this is genuinely blocked on
+  Phase 6, not skipped.
+- **Nine objects sit on the separability floor** and are guessed correctly
+  only 38–62% of the time at a 10% error rate, `Scissors` against
+  `Screwdriver` being the worst. Raising the gate from three answers to four
+  would fix it and needs new attributes.
+- **The calibration result is partly circular.** The simulated player uses
+  the same independent-flip noise model the engine assumes, so the model is
+  correctly specified by construction. It verifies the arithmetic, not the
+  realism. Real-player calibration is unmeasured.
 - **The trained models no longer drive play.** The engine computes the same
   Bayesian posterior directly and marginalises unknown answers properly, which
   feeding zeros to a fitted model cannot do. The Phase 3 models remain as the
@@ -350,8 +477,8 @@ tell apart.
 | **2 — done** | Minimum separation of 3 answers; 117 objects, 141 attributes, 65 semantic rules |
 | **3 — done** | Object-level models on noise-augmented data; `BernoulliNB` over `GaussianNB`; baselines |
 | **4 — done** | Bayesian belief updating + expected information gain; recoverable wrong answers, working "maybe", undo, probability-valued confidence |
-| 5 | Calibration curve, per-attribute noise estimates, and a fuller evaluation harness |
-| 6 | Persist player feedback into a retraining loop; deploy |
+| **5 — done** | Calibration verified (ECE 0.010), sensitivity analysis, per-object results, evaluation notebook |
+| 6 | Learn from `feedback_log.csv`: per-attribute noise estimates from real answers, new objects from wrong guesses; deploy |
 
 ---
 

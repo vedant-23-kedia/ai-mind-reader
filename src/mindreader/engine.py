@@ -66,6 +66,15 @@ class Answer:
     value: int | None       # YES, NO, or MAYBE
 
 
+# Weight applied to each answer's log-likelihood. 1.0 is textbook Naive
+# Bayes, which treats every attribute as independent evidence. Ours are not
+# independent - the dataset deliberately enforces rules like
+# is_mammal -> is_animal, so answering both effectively counts the same fact
+# twice and the posterior ends up overconfident. A weight below 1 discounts
+# each answer to compensate. scripts/evaluate.py fits the value empirically.
+DEFAULT_LIKELIHOOD_WEIGHT = 1.0
+
+
 @dataclass
 class BeliefEngine:
     """A belief state over objects, updated by answers."""
@@ -73,6 +82,7 @@ class BeliefEngine:
     protos: Prototypes
     noise: float = DEFAULT_NOISE
     confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD
+    likelihood_weight: float = DEFAULT_LIKELIHOOD_WEIGHT
     answers: list[Answer] = field(default_factory=list)
 
     def __post_init__(self) -> None:
@@ -81,6 +91,11 @@ class BeliefEngine:
                 "noise must be in (0, 0.5); got %r. At 0 a single wrong "
                 "answer is unrecoverable, and at >=0.5 an answer is no better "
                 "than a coin flip." % self.noise
+            )
+        if not 0.0 < self.likelihood_weight <= 1.0:
+            raise ValueError(
+                "likelihood_weight must be in (0, 1]; got %r"
+                % self.likelihood_weight
             )
         X = self.protos.X.astype(np.float64)
         # like1[o, f] = P(player answers YES | object o)
@@ -99,7 +114,7 @@ class BeliefEngine:
                 continue  # no evidence: marginalise this attribute out
             k = self._feat_index[ans.feature]
             like = self._like1[:, k] if ans.value == YES else self._like0[:, k]
-            logp = logp + np.log(like)
+            logp = logp + self.likelihood_weight * np.log(like)
         return logp
 
     def posterior(self) -> np.ndarray:
@@ -162,8 +177,9 @@ class BeliefEngine:
 
         # Probability the player answers YES to each attribute, and the
         # posterior that would result - computed for all attributes at once.
-        num1 = p[:, None] * self._like1          # (n_objects, n_features)
-        num0 = p[:, None] * self._like0
+        w = self.likelihood_weight
+        num1 = p[:, None] * self._like1 ** w     # (n_objects, n_features)
+        num0 = p[:, None] * self._like0 ** w
         p_yes = num1.sum(axis=0)
         p_no = num0.sum(axis=0)
 
