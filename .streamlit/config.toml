@@ -1,0 +1,21 @@
+# Streamlit configuration.
+#
+# The theme matches the gradient used in the app's own CSS so the chrome
+# (sidebar, widgets, expanders) does not clash with the cards.
+
+[theme]
+base = "dark"
+primaryColor = "#7C4DFF"
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#16213E"
+textColor = "#FAFAFA"
+font = "sans serif"
+
+[browser]
+# No usage statistics from a game that collects player answers.
+gatherUsageStats = false
+
+[server]
+# The app writes data/feedback_log.csv while running, so reloading on every
+# file change would restart the session mid-game.
+fileWatcherType = "poll"

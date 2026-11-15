@@ -4,13 +4,14 @@ An Akinator-style guessing game. You think of an object; the app asks yes/no
 questions and works out what it is. Built on a hand-authored dataset of 117
 objects described by 141 binary attributes.
 
-> **Project status: Phases 1–5 of 6 complete.** The data layer is reproducible
+> **Project status: all 6 phases complete.** The data layer is reproducible
 > and validated, the models identify the **object** rather than a broad
 > category, and the game engine now tracks a probability distribution instead
 > of deleting candidates — so a wrong answer is recoverable, "maybe" means
 > something, and the confidence figure is a real probability that has now been
-> **verified calibrated** (expected calibration error 0.010).
-> See [Roadmap](#roadmap).
+> **verified calibrated** (expected calibration error 0.010). The engine now
+> also learns each question's real error rate from recorded games instead of
+> assuming one constant. See [Roadmap](#roadmap).
 
 ---
 
@@ -29,10 +30,15 @@ streamlit run app/app_final.py
 Verify an install:
 
 ```bash
-python -m pytest -q                 # 92 tests
+python -m pytest -q                 # 113 tests
 python scripts/smoke_check.py       # alignment, full-game replay, noise sweep
 python scripts/compare_engines.py   # old vs new engine, head to head
 python scripts/evaluate.py          # accuracy, calibration, sensitivity (~3 min)
+python scripts/verify_claims.py     # re-derive every README number from the data
+
+# the learning loop (uses the committed synthetic sample until real games exist)
+python scripts/make_sample_feedback.py
+python scripts/learn_from_feedback.py --evaluate
 ```
 
 Requires Python 3.12. No paths are hardcoded; everything resolves from the
@@ -198,6 +204,66 @@ These are the objects whose nearest neighbours sit exactly on the three-answer
 separability floor. Raising the gate to four answers is the direct fix and
 would need new attributes — the same loop Phase 2 ran.
 
+### Phase 6: learning each question's real error rate
+
+Every phase up to here assumed players make mistakes at one uniform rate.
+They do not — people are reliably certain whether something is an animal and
+reliably vague about whether it is "big". No amount of simulation can reveal
+which attributes those are; only real answers can.
+
+After every game the app records the player's full answer sheet alongside
+what they were actually thinking of. `scripts/learn_from_feedback.py` turns
+that into a measured error rate per attribute, smoothed toward the global rate
+by a Beta prior so a handful of observations cannot swing an estimate to 0 or
+1.
+
+There is no real player data yet, so `scripts/make_sample_feedback.py`
+generates a synthetic log with **error rates planted on purpose**. The test is
+whether the estimator finds them:
+
+| Attribute | Planted | Recovered |
+|---|---|---|
+| `is_big` | 35% | **35.3%** |
+| `is_necessary` | 30% | 27.8% |
+| `used_daily` | 28% | **28.7%** |
+| `is_reusable` | 25% | **26.5%** |
+| `can_make_sound` | 20% | 21.7% |
+| `is_purchased` | 22% | **20.1%** |
+| every other attribute | 4% | 2.7–3.9% |
+
+### The log had a selection bias, and fixing it mattered
+
+The first version logged only games the engine **lost**. That looks reasonable
+and is badly wrong: games are lost *precisely when answers were wrong*, so a
+losses-only log over-represents mistakes. The estimates came out inflated by
+half:
+
+| Attribute | Planted | Losses only | Both outcomes |
+|---|---|---|---|
+| `used_daily` | 28% | 43.9% | **28.7%** |
+| `is_big` | 35% | 42.6% | **35.3%** |
+| `is_reusable` | 25% | 32.3% | **26.5%** |
+| solid attributes | 4% | 6.4–8.7% | **2.7–3.9%** |
+
+The app now logs wins as well as losses, which makes the sample the games
+actually played rather than only the failures.
+
+### Candidate new objects
+
+When a player names something the dataset has never heard of, their answers
+are already a partial description of it. Several reports get merged into a
+draft entry for `data/source/objects.json`, with disagreements flagged:
+
+```
+Camel         2 reports, 10 attributes agreed, 1 disputed
+Stapler       2 reports, 12 attributes agreed, 1 disputed
+Guitar_Pick   1 report,   8 attributes agreed
+```
+
+**Nothing is applied automatically.** An attribute vector assembled from a few
+strangers' answers is a proposal for review, and the separability gate still
+has to pass afterwards.
+
 ### Three findings worth stating
 
 **1. `BernoulliNB` beats `GaussianNB` by 7.2 points** (86.2% vs 78.9%). The
@@ -290,6 +356,7 @@ src/mindreader/
   augment.py                    the player-noise model
   engine.py                     the Bayesian belief engine
   evaluation.py                 game simulation + calibration maths
+  feedback.py                   per-attribute error rates from real games
 data/source/                    the authoring spec - edit this, not the CSV
   features.json                 attribute -> question text + group
   objects.json                  object -> category + attributes that are TRUE
@@ -298,9 +365,12 @@ scripts/build_dataset.py        compiles the spec into the dataset
 scripts/train_models.py         trains + evaluates + plots the models
 scripts/compare_engines.py      old vs new engine, head to head
 scripts/evaluate.py             accuracy, calibration, sensitivity
+scripts/learn_from_feedback.py  error rates + new-object drafts from games
+scripts/make_sample_feedback.py synthetic log, so the loop is demonstrable
+scripts/verify_claims.py        checks the README against the artifacts
 scripts/smoke_check.py          end-to-end verification
 notebooks/01_evaluation.ipynb   walkthrough of the generated results
-tests/                          92 tests
+tests/                          113 tests
 models/object_*.pkl             trained object-level models
 legacy/                         superseded category models and plots
 ```
@@ -329,22 +399,23 @@ tell apart.
 
 ## Progress by phase
 
-| Measure | Original | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 |
-|---|---|---|---|---|---|---|
-| Objects | 56 | 56 | 117 | 117 | 117 | 117 |
-| Attributes | 52 | 52 | 141 | 141 | 141 | 141 |
-| Min answers between two objects | 1 | 1 | **3** | 3 | 3 | 3 |
-| Pairs one answer apart | 12 | 9 | **0** | 0 | 0 | 0 |
-| What the models predict | category | category | category | **the object** | the object | the object |
-| Attributes the models use | 52 | 52 | 52 of 141 | **141** | 141 | 141 |
-| Meaningful accuracy figure | ✗ | ✗ | ✗ | **✓** | ✓ | ✓ |
-| Semantic rules enforced | 0 | 0 | 65 | 65 | 65 | 65 |
-| Wrong answer recoverable | ✗ | ✗ | ✗ | ✗ | **✓** | **✓** |
-| "Maybe" does anything | ✗ | ✗ | ✗ | ✗ | **✓** | **✓** |
-| Confidence is a probability | ✗ | ✗ | ✗ | ✗ | **✓** | **✓** |
-| Whole-game top-1 @ 10% noise | 31.0% | — | — | — | **85.8%** | **85.8%** |
-| Confidence calibrated | ✗ | ✗ | ✗ | ✗ | unverified | **✓ 0.010** |
-| Tests | 0 | 17 | 20 | 39 | 67 | **92** |
+| Measure | Original | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Phase 5 | Phase 6 |
+|---|---|---|---|---|---|---|---|
+| Objects | 56 | 56 | 117 | 117 | 117 | 117 | 117 |
+| Attributes | 52 | 52 | 141 | 141 | 141 | 141 | 141 |
+| Min answers between two objects | 1 | 1 | **3** | 3 | 3 | 3 | 3 |
+| Pairs one answer apart | 12 | 9 | **0** | 0 | 0 | 0 | 0 |
+| What the models predict | category | category | category | **the object** | the object | the object | the object |
+| Attributes the models use | 52 | 52 | 52 of 141 | **141** | 141 | 141 | 141 |
+| Meaningful accuracy figure | ✗ | ✗ | ✗ | **✓** | ✓ | ✓ | ✓ |
+| Semantic rules enforced | 0 | 0 | 65 | 65 | 65 | 65 | 65 |
+| Wrong answer recoverable | ✗ | ✗ | ✗ | ✗ | **✓** | ✓ | ✓ |
+| "Maybe" does anything | ✗ | ✗ | ✗ | ✗ | **✓** | ✓ | ✓ |
+| Confidence is a probability | ✗ | ✗ | ✗ | ✗ | **✓** | ✓ | ✓ |
+| Whole-game top-1 @ 10% noise | 31.0% | — | — | — | **85.8%** | 85.8% | 85.8% |
+| Confidence calibrated | ✗ | ✗ | ✗ | ✗ | unverified | **✓ 0.010** | ✓ 0.010 |
+| Error rate per attribute | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | **✓ learned** |
+| Tests | 0 | 17 | 20 | 39 | 67 | 92 | **113** |
 
 ### Phase 1 — bug fixes
 
@@ -430,15 +501,65 @@ tell apart.
 - `notebooks/01_evaluation.ipynb` reads the generated artifacts rather than
   recomputing, so the notebook and the README cannot disagree.
 
+### Phase 6 — the learning loop
+
+- **Per-attribute error rates** (`src/mindreader/feedback.py`), smoothed
+  hierarchically: each attribute shrinks toward the global rate, and the
+  global rate itself shrinks toward the assumed default — without that second
+  level, one wrong answer out of one observation sets the global rate to 100%
+  and every estimate shrinks toward nonsense.
+- **The engine accepts a per-attribute noise vector**, so an attribute known
+  to be answered unreliably is both weighted less and asked less eagerly.
+- **Fixed a selection bias** by logging wins as well as losses, which cut the
+  error in the recovered rates from ~50% to ~2%.
+- **Candidate new objects** drafted from players' own answers, with
+  disagreements flagged and nothing applied automatically.
+- **Deployment config** (`.streamlit/config.toml`) and a theme matching the
+  app's own CSS.
+- **21 feedback tests**, including that a planted error rate is recovered, a
+  single observation cannot swing an estimate, "maybe" is not counted as a
+  mistake, malformed log rows are skipped rather than fatal, and logs written
+  before the `outcome` column still load.
+
+---
+
+## Deploying
+
+The app runs from a clean clone with no training step, because the model it
+needs at runtime is committed.
+
+**Streamlit Community Cloud**
+
+1. Point it at this repository (authorise it for private repos if needed).
+2. Main file path: `app/app_final.py`
+3. Python version: **3.12** — set it in the app's advanced settings, since
+   `scikit-learn==1.7.2` has no wheels for every newer version.
+4. `requirements.txt` at the repo root is picked up automatically.
+
+**Anywhere else**
+
+```bash
+streamlit run app/app_final.py --server.port 8501
+```
+
+One caveat for any hosted deployment: `data/feedback_log.csv` is written to
+local disk, and most hosts give you an ephemeral filesystem, so the log is
+lost on restart. Collecting feedback properly in production means pointing
+`cfg.FEEDBACK_LOG` at something durable.
+
 ---
 
 ## Known limitations
 
-- **The noise parameter is a single global constant** (0.10). Real players are
-  not uniformly unreliable: they are confident about `is_animal` and unsure
-  about `is_big`. Estimating per-attribute rates needs real player data, which
-  is what `data/feedback_log.csv` is for — so this is genuinely blocked on
-  Phase 6, not skipped.
+- **No real player data exists yet.** The per-attribute learning works and is
+  tested, but it has only been demonstrated against a synthetic log with
+  planted rates. Until people actually play, the engine runs on the global
+  0.10 default, and the learned-profile path stays dormant.
+- **The learned profile is not yet shown to improve accuracy**, only to do no
+  harm. Proving it helps needs players whose reliability genuinely varies by
+  attribute — i.e. real ones. Against simulated players, who are uniformly
+  unreliable by construction, a per-attribute profile cannot help by
+  definition.
 - **Nine objects sit on the separability floor** and are guessed correctly
   only 38–62% of the time at a 10% error rate, `Scissors` against
   `Screwdriver` being the worst. Raising the gate from three answers to four
@@ -464,8 +585,6 @@ tell apart.
   information. Kept because information-gain selection already deprioritises
   weak questions.
 - **Category balance is uneven** — `Daily Object` holds 31 of 117.
-- **Feedback is logged but not learned from.** `data/feedback_log.csv`
-  accumulates wrong guesses; wiring it into retraining is Phase 6.
 
 ---
 
@@ -478,7 +597,7 @@ tell apart.
 | **3 — done** | Object-level models on noise-augmented data; `BernoulliNB` over `GaussianNB`; baselines |
 | **4 — done** | Bayesian belief updating + expected information gain; recoverable wrong answers, working "maybe", undo, probability-valued confidence |
 | **5 — done** | Calibration verified (ECE 0.010), sensitivity analysis, per-object results, evaluation notebook |
-| 6 | Learn from `feedback_log.csv`: per-attribute noise estimates from real answers, new objects from wrong guesses; deploy |
+| **6 — done** | Per-attribute error rates learned from recorded games; candidate new objects drafted from player answers; deployment config |
 
 ---
 

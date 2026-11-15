@@ -80,18 +80,37 @@ class BeliefEngine:
     """A belief state over objects, updated by answers."""
 
     protos: Prototypes
-    noise: float = DEFAULT_NOISE
+    # a single rate, or one rate per attribute (see __post_init__)
+    noise: float | np.ndarray = DEFAULT_NOISE
     confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD
     likelihood_weight: float = DEFAULT_LIKELIHOOD_WEIGHT
     answers: list[Answer] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        if not 0.0 < self.noise < 0.5:
+        # `noise` may be a single rate for every attribute, or one rate per
+        # attribute. Per-attribute rates are what scripts/learn_from_feedback.py
+        # estimates from real games: people are reliably sure whether
+        # something is an animal and reliably vague about whether it is "big",
+        # and a single global constant cannot express that.
+        noise = np.asarray(self.noise, dtype=np.float64)
+        if noise.ndim == 0:
+            noise = np.full(self.protos.n_features, float(noise))
+        elif noise.shape != (self.protos.n_features,):
             raise ValueError(
-                "noise must be in (0, 0.5); got %r. At 0 a single wrong "
-                "answer is unrecoverable, and at >=0.5 an answer is no better "
-                "than a coin flip." % self.noise
+                "per-attribute noise must have one value per attribute "
+                "(%d); got shape %r"
+                % (self.protos.n_features, noise.shape)
             )
+        if not ((noise > 0.0) & (noise < 0.5)).all():
+            bad = np.where(~((noise > 0.0) & (noise < 0.5)))[0][:5]
+            raise ValueError(
+                "noise must be in (0, 0.5); offending attributes: %s. At 0 a "
+                "single wrong answer is unrecoverable, and at >=0.5 an answer "
+                "is no better than a coin flip."
+                % [self.protos.features[i] for i in bad]
+            )
+        self._noise = noise
+
         if not 0.0 < self.likelihood_weight <= 1.0:
             raise ValueError(
                 "likelihood_weight must be in (0, 1]; got %r"
@@ -99,12 +118,21 @@ class BeliefEngine:
             )
         X = self.protos.X.astype(np.float64)
         # like1[o, f] = P(player answers YES | object o)
-        self._like1 = np.where(X == 1, 1.0 - self.noise, self.noise)
+        self._like1 = np.where(X == 1, 1.0 - noise, noise)
         self._like0 = 1.0 - self._like1
         self._feat_index = {f: i for i, f in enumerate(self.protos.features)}
         self._log_prior = np.full(
             self.protos.n_objects, -np.log(self.protos.n_objects)
         )
+
+    @property
+    def noise_vector(self) -> np.ndarray:
+        """The effective per-attribute error rate actually in use."""
+        return self._noise
+
+    @property
+    def mean_noise(self) -> float:
+        return float(self._noise.mean())
 
     # ---- belief state ----------------------------------------------------
     def log_posterior(self) -> np.ndarray:

@@ -6,6 +6,13 @@ __pycache__/
 .DS_Store
 data/feedback_log.csv
 
+# Learned at runtime from the player log above, so never committed: a
+# checked-in profile would ship either synthetic numbers or one person's
+# data as though it were everyone's. data/sample_feedback_log.csv IS
+# committed, so the learning step is demonstrable from a fresh clone.
+data/noise_profile.json
+data/new_object_candidates.json
+
 # Trained models are regenerable: `python scripts/train_models.py` rebuilds
 # all six byte-identically from the fixed seed. Only the model the app needs
 # at runtime is versioned, so a fresh clone can play without training first.

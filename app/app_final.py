@@ -17,11 +17,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from mindreader import config as cfg  # noqa: E402
 from mindreader.dataset import load_prototypes  # noqa: E402
 from mindreader.engine import (  # noqa: E402
+    DEFAULT_NOISE,
     MAYBE,
     NO,
     YES,
     BeliefEngine,
 )
+from mindreader.feedback import load_noise_profile  # noqa: E402
 
 MAX_QUESTIONS = 20
 
@@ -144,10 +146,15 @@ def load_all():
     info_path = cfg.MODELS_DIR / "object_model_info.json"
     model_info = (json.loads(info_path.read_text(encoding="utf-8"))
                   if info_path.exists() else None)
-    return protos, question_map, cats, model_info
+    # Per-attribute error rates measured from real games, if any have been
+    # learned yet. Without them the engine assumes one global rate for every
+    # question, which is the Phase 4 behaviour.
+    noise = load_noise_profile(cfg.NOISE_PROFILE, protos.features,
+                               default_rate=DEFAULT_NOISE)
+    return protos, question_map, cats, model_info, noise
 
 
-protos, question_map, cat_map_dict, model_info = load_all()
+protos, question_map, cat_map_dict, model_info, learned_noise = load_all()
 
 N_OBJECTS = protos.n_objects
 N_FEATURES = protos.n_features
@@ -159,13 +166,17 @@ def build_engine() -> BeliefEngine:
     The posterior is a pure function of the answer list, so there is no
     hidden state to keep in sync - which is exactly what makes undo possible.
     """
-    eng = BeliefEngine(protos)
+    eng = BeliefEngine(
+        protos,
+        noise=learned_noise if learned_noise is not None else DEFAULT_NOISE,
+    )
     for feat, val in st.session_state.answers:
         eng.answer(feat, val)
     return eng
 
 
-def log_feedback(guess: str, actual: str, answers) -> bool:
+def log_feedback(guess: str, actual: str, answers,
+                 outcome: str = "wrong") -> bool:
     """Record a wrong guess so it can be learned from later.
 
     The original app asked what the player was thinking of and then threw the
@@ -175,6 +186,11 @@ def log_feedback(guess: str, actual: str, answers) -> bool:
     actually thinking of, which is what scripts/learn_from_feedback.py needs
     to estimate how reliably each attribute gets answered.
 
+    Correct guesses are logged too, not just wrong ones. Logging only losses
+    would bias the estimates badly upward: games are lost precisely when
+    answers were wrong, so a losses-only log over-represents mistakes. With
+    both outcomes recorded the sample is the games actually played.
+
     Returns True if the row was written.
     """
     try:
@@ -182,11 +198,11 @@ def log_feedback(guess: str, actual: str, answers) -> bool:
         with cfg.FEEDBACK_LOG.open("a", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)
             if new:
-                w.writerow(["timestamp", "guessed", "actual", "n_answers",
-                            "answers_json"])
+                w.writerow(["timestamp", "outcome", "guessed", "actual",
+                            "n_answers", "answers_json"])
             w.writerow([
                 datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                guess, actual.strip(), len(answers),
+                outcome, guess, actual.strip(), len(answers),
                 json.dumps({f: v for f, v in answers}),
             ])
         return True
@@ -424,6 +440,12 @@ elif st.session_state.over:
                      use_container_width=True, key="correct_btn"):
             st.session_state.correct = True
             st.session_state.wins += 1
+            # Logged as well as losses, so the learned error rates are not
+            # biased by only ever seeing the games that went wrong.
+            if not st.session_state.get("logged"):
+                log_feedback(final_obj, final_obj, st.session_state.answers,
+                             outcome="correct")
+                st.session_state.logged = True
             st.rerun()
     with r2:
         if st.button("❌  Nope, wrong!", use_container_width=True,
@@ -452,7 +474,7 @@ elif st.session_state.over:
         )
         if correct_input and not st.session_state.get("logged"):
             ok = log_feedback(final_obj, correct_input,
-                              st.session_state.answers)
+                              st.session_state.answers, outcome="wrong")
             st.session_state.logged = True
             if ok:
                 st.success(
@@ -505,6 +527,16 @@ elif st.session_state.over:
 # SIDEBAR
 # ============================================================
 
+if learned_noise is not None:
+    noise_note = ("learned per attribute from recorded games "
+                  "(%.0f%%–%.0f%%, mean %.0f%%)"
+                  % (learned_noise.min() * 100, learned_noise.max() * 100,
+                     learned_noise.mean() * 100))
+else:
+    noise_note = ("assumed %.0f%% for every question — run "
+                  "`learn_from_feedback.py` to measure it per attribute"
+                  % (DEFAULT_NOISE * 100))
+
 if model_info:
     _res = sorted(model_info["results"].items(), key=lambda kv: -kv[1]["test_top1"])
     bench_lines = "\n".join(
@@ -538,6 +570,9 @@ so mistakes are survivable.
 **📈 Model benchmarks**
 *(top-1 on noisy simulated players)*
 {bench_lines}
+
+**🎚️ Error-rate model**
+{noise_note}
 
 **📦 Dataset**
 {N_OBJECTS} objects, {N_FEATURES} attributes

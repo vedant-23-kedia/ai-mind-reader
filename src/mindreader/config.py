@@ -28,8 +28,18 @@ FEATURE_COLUMNS = DATA_DIR / "feature_columns.json"
 QUESTION_MAP = DATA_DIR / "question_map.json"
 QUESTION_ORDER = DATA_DIR / "question_order.json"
 
-# Feedback captured from players when the AI guesses wrong.
+# Feedback captured from players after every game, win or lose.
 FEEDBACK_LOG = DATA_DIR / "feedback_log.csv"
+
+# A committed synthetic log, so the learning step can be demonstrated from a
+# fresh clone without waiting for real players.
+SAMPLE_FEEDBACK_LOG = DATA_DIR / "sample_feedback_log.csv"
+
+# Per-attribute error rates learned from the log. Absent until
+# scripts/learn_from_feedback.py has been run; the engine falls back to a
+# single global rate.
+NOISE_PROFILE = DATA_DIR / "noise_profile.json"
+NEW_OBJECT_CANDIDATES = DATA_DIR / "new_object_candidates.json"
 
 # The original dataset shipped two misspelled column headers while the trained
 # models expected the corrected names. Loading it without this rename silently
