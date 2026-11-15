@@ -35,6 +35,7 @@ python scripts/smoke_check.py       # alignment, full-game replay, noise sweep
 python scripts/compare_engines.py   # old vs new engine, head to head
 python scripts/evaluate.py          # accuracy, calibration, sensitivity (~3 min)
 python scripts/verify_claims.py     # re-derive every README number from the data
+python scripts/playtest.py          # drive the real app through whole games
 
 # the learning loop (uses the committed synthetic sample until real games exist)
 python scripts/make_sample_feedback.py
@@ -368,6 +369,7 @@ scripts/evaluate.py             accuracy, calibration, sensitivity
 scripts/learn_from_feedback.py  error rates + new-object drafts from games
 scripts/make_sample_feedback.py synthetic log, so the loop is demonstrable
 scripts/verify_claims.py        checks the README against the artifacts
+scripts/playtest.py             plays whole games through the real app
 scripts/smoke_check.py          end-to-end verification
 notebooks/01_evaluation.ipynb   walkthrough of the generated results
 tests/                          113 tests

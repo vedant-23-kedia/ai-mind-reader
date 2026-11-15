@@ -215,11 +215,14 @@ def log_feedback(guess: str, actual: str, answers,
 # ============================================================
 
 def reset_game():
-    wins = st.session_state.get("wins", 0)
-    games = st.session_state.get("games", 0)
-    st.session_state.clear()
-    st.session_state.wins = wins
-    st.session_state.games = games
+    """Clear this game's state, leaving the running totals alone.
+
+    Deliberately resets only the keys this app owns. The original used
+    st.session_state.clear(), which also wipes Streamlit's own widget state -
+    and clearing a widget's key is a documented footgun: the "what were you
+    thinking of" box then raised KeyError on the next run, because its stored
+    value had been deleted from under it.
+    """
     st.session_state.started = False
     st.session_state.over = False
     st.session_state.answers = []      # list of (feature, YES/NO/MAYBE)
@@ -229,6 +232,14 @@ def reset_game():
     st.session_state.top3 = []
     st.session_state.correct = None
     st.session_state.logged = False
+    st.session_state.setdefault("wins", 0)
+    st.session_state.setdefault("games", 0)
+
+    # The "what were you thinking of" box is NOT reset here. Streamlit
+    # forbids assigning to or deleting a widget's key once that widget has
+    # been instantiated in the current run, and it is instantiated just above
+    # the Play Again button that triggers this. Instead the widget's key
+    # carries the game number, so each game gets a fresh, empty box.
 
 
 if "started" not in st.session_state:
@@ -467,10 +478,13 @@ elif st.session_state.over:
             '🧠 Human wins this round!</div>',
             unsafe_allow_html=True
         )
+        # Key includes the game number so each game gets its own widget;
+        # a shared key would carry the previous game's answer over, and
+        # clearing it is not permitted once the widget exists.
         correct_input = st.text_input(
             "What were you thinking of?",
             placeholder="Type it here so I can learn...",
-            key="actual_input",
+            key="actual_input_%d" % st.session_state.games,
         )
         if correct_input and not st.session_state.get("logged"):
             ok = log_feedback(final_obj, correct_input,
